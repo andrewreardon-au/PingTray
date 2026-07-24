@@ -28,7 +28,7 @@ Hover over the icon to see the exact number. It checks every 5 seconds by defaul
 | `build.ps1` | Rebuilds `dist/PingTray.exe` from source on your own machine |
 | `screenshots/` | The images in this README |
 
-No installer needed: **Code → Download ZIP**, extract, and run.
+No installer needed: [download the latest release zip](https://github.com/andrewreardon-au/PingTray/releases/latest), extract, and run.
 
 A single missed reply doesn't flip it to offline - that's normal on flaky connections like 4G. It takes **3 misses in a row** before it shows black "0"; until then it keeps showing your last good reading, and hovering shows something like `no response 1/3 (last: 23ms)` so you know it's currently struggling without the number jumping around.
 
