@@ -1,15 +1,20 @@
 # PingTray
 
-**v1.2** — 2026-07-17
+**v1.3** — 2026-07-24
 **Author:** Andrew Reardon, andrewreardon@gmail.com
 
 A standalone Windows system tray app that shows live ping latency as a
 color-coded number in the notification area. Defaults to `1.1.1.1`, polled
-every 3s; both are overridable via command-line args (see below).
+every 5s; both are overridable via command-line args (see below).
 
 ## Files
 
 - `src/PingTray.cs` — source (C#, WinForms `NotifyIcon`)
+- `src/PingTray.ico` — icon embedded into the exe via `/win32icon`
+  (Explorer/taskbar/Task Manager identity, and the tray placeholder until
+  the first ping paints a number). Version resources (Properties → Details)
+  come from the `[assembly: ...]` attributes at the top of `PingTray.cs`,
+  which derive from the same `Version` const used by `-v` and About.
 - `dist/PingTray.exe` — compiled, self-contained binary. Copy this folder to
   any Windows 10/11 machine and double-click it — no install, no dependencies
   beyond .NET Framework (present on every Windows 10/11 machine by default).
@@ -26,15 +31,22 @@ every 3s; both are overridable via command-line args (see below).
 ## How it works
 
 - Pings the target host (default `1.1.1.1`) on the configured interval
-  (default 3s) via `System.Net.NetworkInformation.Ping`, with a 2s timeout
-  per attempt (`PingTimeoutMs`). A single missed reply is common on flaky
+  (default 5s) via `System.Net.NetworkInformation.Ping.SendPingAsync`, with
+  a 2s timeout per attempt (`PingTimeoutMs`). The await resumes on the UI
+  thread via the WinForms `SynchronizationContext`, so a timing-out attempt
+  never blocks the message pump (menu/tooltip stay responsive while the
+  target is down). `_pingInFlight` skips a tick if the previous attempt is
+  still pending — `Ping` throws if a second send starts while one is in
+  flight — and `UpdatePing` snapshots `Target` at send time so a reply that
+  lands just after a Settings-dialog retarget is labeled with the host that
+  was actually pinged. A single missed reply is common on flaky
   links (4G) and isn't treated as offline — `_consecutiveFailures` must
   reach `FailureThreshold` (3) before the icon flips to the offline
   indicator. Below that threshold the icon keeps showing the last
   known-good reading (`_lastGoodMs`); only the tooltip reflects the
   in-progress failures (`no response 1/3 ...`). A single success resets the
   counter immediately. Worst-case detection latency is roughly
-  `FailureThreshold * IntervalMs` (~9-11s at the defaults). Retargeting via
+  `FailureThreshold * IntervalMs` (~15-17s at the defaults). Retargeting via
   the Settings dialog resets both `_consecutiveFailures` and `_lastGoodMs`
   so stale state from the old target doesn't leak into the new one.
 - Renders the latency as text onto a 64x64 bitmap, converts it to an icon via
@@ -81,26 +93,25 @@ triggers an immediate `UpdatePing()`, and persists via `SaveSettings()`.
 
 ### Persistence model
 
-Settings are saved to `settings-<sanitized-target>.ini` next to the exe,
-where `<sanitized-target>` is `ProfileKey` — the target this **instance was
-launched with** (from `--target=`, or the `1.1.1.1` default), captured once
-at startup *before* any dialog edits. This is what makes multi-instance
-monitoring work cleanly:
+There is a single saved-settings file, `settings.ini`, next to the exe,
+written only when **OK** is pressed in the Settings dialog. Precedence is
+strictly "command line wins":
 
-- Each launch config (a distinct `--target=` shortcut, or the no-args
-  default) maps to its own `.ini` file and its own persisted settings.
-- Retargeting an instance via the Settings dialog changes what it *watches*
-  and *saves to*, but `ConfigPath` stays pinned to the original
-  `ProfileKey` — so instance A's saved file never gets overwritten by
-  instance B's edits, even if you point A at the same host B is already
-  watching.
+- **No `-t`/`-i` options** (double-click, autostart): `settings.ini` is
+  loaded, so the app resumes whatever it was monitoring when settings were
+  last saved. Missing/malformed file → built-in defaults (`1.1.1.1`, 5s).
+- **Any explicit `-t`/`-i` option**: `settings.ini` is ignored entirely —
+  the run is built-in defaults plus the given flags (`_targetFromCli` /
+  `_intervalFromCli` in `ParseArgs`). CLI flags are never written to
+  `settings.ini`, so ad-hoc runs don't pollute the saved state.
+- Multi-instance note: all instances share the one `settings.ini`; the
+  last dialog **OK** wins. Instances launched with explicit flags never
+  read or clobber it unless you save from their Settings dialog.
 - Known edge case: the single-instance mutex is created from `Target`
   *before* the dialog can change it, so retargeting an instance at runtime
-  doesn't update its mutex — a new instance launched afterward with
-  `--target=` matching the *new* (dialog-set) value won't be blocked by it.
-  Not handled; low-impact since it only affects the rare case of
-  retargeting one running instance to collide with another instance you
-  then launch fresh.
+  doesn't update its mutex — a new instance launched afterward with a
+  target matching the *new* (dialog-set) value won't be blocked by it.
+  Not handled; low-impact.
 
 `.ini` format is plain `key=value` lines (`target=`, `interval=` in
 seconds), hand-editable, `#`-comment lines ignored, malformed/missing files
@@ -119,11 +130,34 @@ Other system tray icons** and toggle it to always show.
 ### Command-line options
 
 ```
-PingTray.exe [--target=<host>] [--interval=<seconds>]
+PingTray.exe [-t <host> | --target=<host>] [-i <sec> | --interval=<seconds>]
+             [-h | --help] [-v | --version]
 ```
 
-- `--target=1.0.0.1` — ping a different host instead of `1.1.1.1`.
-- `--interval=10` — poll every 10 seconds instead of the 3s default.
+- `-t 1.0.0.1` / `--target=1.0.0.1` — ping a different host instead of
+  `1.1.1.1` (`-t=host` also accepted).
+- `-i 10` / `--interval=10` — poll every 10 seconds instead of the 5s
+  default (`-i=10` also accepted).
+- `-h` / `--help` / `-?` / `/?` — print usage and exit.
+- `-v` / `--version` — print version/author info and exit.
+
+The exe is `/target:winexe` (no console), so `-h`/`-v` output goes through
+`PrintOrShow()`: it calls `AttachConsole(ATTACH_PARENT_PROCESS)` to write
+back into the invoking terminal (or uses inherited stdout when piped or
+redirected), falling back to a `MessageBox` only when there's no console at
+all (e.g. flag set on a double-clicked shortcut). Because the shell doesn't
+wait for a GUI-subsystem exe, the prompt prints *before* our output and the
+console would then sit on a bare line that looks hung — so after writing to
+an attached interactive console (stdout is `FILE_TYPE_CHAR`, i.e. not piped
+or redirected), `PrintOrShow()` injects one Enter key event into the console
+input buffer (`WriteConsoleInput`) to make the shell redraw its prompt. A
+failed console/pipe write (reader closed the pipe early) exits quietly
+instead of falling back to the dialog. Launching a duplicate
+instance (same target already running) shows an "already running" info
+dialog instead of exiting silently. Version/author constants (`Version`,
+`VersionDate`, `Author`, `AuthorEmail`) live at the top of `PingTray.cs`
+and feed `-v`, `-h`, and the tray menu's **About PingTray...** dialog —
+bump `Version`/`VersionDate` on each release alongside the README headers.
 
 Unrecognized/omitted args fall back to the defaults. Different targets get
 independent single-instance locks, so you can run multiple copies side by
@@ -131,14 +165,11 @@ side (e.g. one for `1.1.1.1`, another for your gateway) without them
 fighting over the same instance lock — running the *same* target twice is
 still blocked.
 
-**Precedence:** `--target=`/`--interval=` pick which profile's `.ini` file
-gets loaded (see Settings dialog / Persistence model below), but if that
-file already has saved values (e.g. from a previous Settings-dialog edit
-under that same profile), the file's values win over the CLI args for the
-actual live `Target`/`IntervalMs`. In practice this only matters if you
-edit a shortcut's `--target=` after already having run it once and saved
-different settings through the dialog — delete the corresponding
-`settings-*.ini` to reset a profile back to its CLI/default values.
+**Precedence:** the command line always wins. Launched with no options,
+the app loads `settings.ini` (whatever was last saved via the Settings
+dialog); launched with any explicit `-t`/`-i`, it ignores `settings.ini`
+entirely and runs with built-in defaults plus the given flags. CLI flags
+are never persisted (see Persistence model below).
 
 To pass args to the autostart copy, edit the Startup shortcut's Target field
 (see below) and append the flags there.

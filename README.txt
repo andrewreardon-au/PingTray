@@ -1,6 +1,6 @@
 PING TRAY
 
-v1.2 -- 2026-07-17
+v1.3 -- 2026-07-24
 Author: Andrew Reardon, andrewreardon@gmail.com
 
 Shows your network latency as a number in the system tray, right next to
@@ -15,7 +15,7 @@ WHAT THE NUMBER MEANS
   Black "0"     Offline -- no response
 
 Hover over the icon to see the exact number and these ranges. It checks
-every 3 seconds.
+every 5 seconds by default.
 
 
 GETTING STARTED
@@ -72,4 +72,22 @@ like your router:
   4. Save, and use that shortcut instead.
 
 You can also add --interval=10 the same way to check every 10 seconds
-instead of 3.
+instead of 5.
+
+
+COMMAND-LINE OPTIONS
+
+Running from a terminal? All options have short forms too:
+
+  -t <host>, --target=<host>   host to ping (default 1.1.1.1)
+  -i <sec>,  --interval=<sec>  seconds between pings (default 5)
+  -h, --help                   show help and exit
+  -v, --version                show version info and exit
+
+Started with no options, Ping Tray resumes whatever was last saved from
+the Settings box (settings.ini next to the exe). With any option given,
+the command line always wins -- the saved file is ignored and flags are
+never saved.
+
+Right-click the tray icon and choose About PingTray... for version and
+contact details.

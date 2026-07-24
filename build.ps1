@@ -26,6 +26,7 @@ New-Item -ItemType Directory -Force "$scriptDir\dist" | Out-Null
 
 & $csc /nologo /target:winexe /platform:x64 `
     /out:"$scriptDir\dist\PingTray.exe" `
+    /win32icon:"$scriptDir\src\PingTray.ico" `
     /reference:System.Windows.Forms.dll `
     /reference:System.Drawing.dll `
     "$scriptDir\src\PingTray.cs"

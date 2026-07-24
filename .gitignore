@@ -1,3 +1,3 @@
-# Per-profile saved settings written next to the exe at runtime
-settings-*.ini
-dist/settings-*.ini
+﻿# Saved settings written next to the exe at runtime
+settings*.ini
+dist/settings*.ini
