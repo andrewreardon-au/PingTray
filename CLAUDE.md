@@ -72,10 +72,15 @@ every 5s; both are overridable via command-line args (see below).
   clipped by 0.5 px on the right and bottom - invisible at 20 px; and
   `new FontFamily("Segoe UI")` throws if the font is missing (the old
   `new Font(...)` fell back silently) - unreachable on Windows 10/11.
-  Release note: v1.4 (2026-10-09) is this icon drawing. The `v1.3` tag and
-  its release zip hold the old exe; a GitHub release for v1.4 needs the new
-  `dist/PingTray.exe` zipped (the README's "latest release zip" link points
-  at whichever release is newest).
+  Release v1.4 (2026-10-09) is this icon drawing. Release recipe (as v1.3):
+  annotated tag on the pushed commit (`git tag -a v1.4 -m "PingTray v1.4"`,
+  `git push origin v1.4`); zip built FROM THE TAG with `git archive
+  --format=zip -o PingTray-v1.4.zip v1.4` (whole repo tree, text files with
+  Windows line endings); `gh release create v1.4 PingTray-v1.4.zip --title
+  "PingTray v1.4" --notes-file notes.md --verify-tag --latest`. Notes: intro,
+  "New in vX", and the exe's SHA-256. Check the exe inside the zip hashes to
+  the README's SHA-256 before publishing. The README's "latest release zip"
+  link points at whichever release is newest.
 - Old icon handles are explicitly destroyed via `DestroyIcon` (P/Invoke) —
   `Icon.Dispose()` alone does *not* release HICONs created by `GetHicon()`,
   which would otherwise leak GDI handles on a long-running always-on app.
