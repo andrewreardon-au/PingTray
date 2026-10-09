@@ -1,3 +1,4 @@
+using Microsoft.Win32;
 using System;
 using System.Drawing;
 using System.IO;
@@ -58,8 +59,8 @@ internal static class PingTray
     private const ushort VK_RETURN = 0x0D;
     private const uint FILE_TYPE_CHAR = 2;
 
-    internal const string Version = "1.3";
-    private const string VersionDate = "2026-07-24";
+    internal const string Version = "1.4";
+    private const string VersionDate = "2026-10-09";
     private const string Author = "Andrew Reardon";
     private const string AuthorEmail = "andrewreardon@gmail.com";
 
@@ -534,21 +535,11 @@ internal static class PingTray
             _consecutiveFailures = 0;
             _lastGoodMs = ms;
 
-            string text;
-            float fontSize;
-            Color color;
-
-            if (ms >= 1000) { text = "999+"; fontSize = 24f; }
-            else if (ms >= 100) { text = ms.ToString(); fontSize = 34f; }
-            else if (ms >= 10) { text = ms.ToString(); fontSize = 46f; }
-            else { text = ms.ToString(); fontSize = 56f; }
-
-            if (ms < 50) color = Color.LimeGreen;
-            else if (ms < 150) color = Color.Orange;
-            else color = Color.Red;
+            string text = ms >= 1000 ? "999+" : ms.ToString();
+            Tone tone = ms < 50 ? Tone.Good : (ms < 150 ? Tone.Warn : Tone.Bad);
 
             SetTooltip(string.Format("Ping to {0}: {1} ms {2}", target, ms, RangeLegend));
-            ApplyIcon(text, color, fontSize);
+            ApplyIcon(text, tone);
             return;
         }
 
@@ -557,7 +548,7 @@ internal static class PingTray
         if (_consecutiveFailures >= FailureThreshold)
         {
             SetTooltip(string.Format("Ping to {0}: offline ({1}) [{2}x]", target, failureReason, _consecutiveFailures));
-            ApplyIcon("0", Color.Black, 56f);
+            ApplyIcon("0", Tone.Offline);
         }
         else
         {
@@ -569,9 +560,43 @@ internal static class PingTray
         }
     }
 
-    private static void ApplyIcon(string text, Color color, float fontSize)
+    // What the number says. Each tone has a bright colour for a dark taskbar and a darker one
+    // for a light taskbar (see ToneColor); Offline is black on both, with a light outline.
+    private enum Tone { Good, Warn, Bad, Offline }
+
+    private static Color ToneColor(Tone tone, bool light)
     {
-        Icon newIcon = RenderIcon(text, color, fontSize);
+        switch (tone)
+        {
+            case Tone.Good: return light ? Color.FromArgb(0, 130, 0) : Color.LimeGreen;
+            case Tone.Warn: return light ? Color.FromArgb(205, 100, 0) : Color.Orange;
+            case Tone.Bad: return light ? Color.FromArgb(200, 0, 0) : Color.Red;
+            default: return Color.Black;
+        }
+    }
+
+    // True when the Windows taskbar / tray is using the light theme (the system theme, not the
+    // apps theme). Dark when the setting is missing or unreadable.
+    private static bool IsLightTaskbar()
+    {
+        try
+        {
+            using (RegistryKey k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+            {
+                object v = (k == null) ? null : k.GetValue("SystemUsesLightTheme");
+                return v is int && (int)v == 1;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void ApplyIcon(string text, Tone tone)
+    {
+        // Read the theme on every redraw (cheap) so a Windows theme switch shows at the next ping.
+        Icon newIcon = RenderIcon(text, tone, IsLightTaskbar());
         Icon oldIcon = _currentIcon;
         _currentIcon = newIcon;
         _notifyIcon.Icon = newIcon;
@@ -584,28 +609,89 @@ internal static class PingTray
         }
     }
 
-    private static Icon RenderIcon(string text, Color color, float fontSize)
+    // The number as outlined text filling a 32x32 icon (Windows scales it into the tray slot).
+    private static Icon RenderIcon(string text, Tone tone, bool light)
     {
-        using (var bmp = new Bitmap(64, 64))
+        const int S = 32;
+        Color color = ToneColor(tone, light);
+        // The outline is the opposite of the text: dark on a dark taskbar, light on a light one.
+        // The black offline "0" always gets a light one so it shows on any taskbar.
+        bool offline = tone == Tone.Offline;
+        Color halo = (light || offline) ? Color.FromArgb(offline ? 235 : 190, 255, 255, 255) : Color.FromArgb(190, 15, 15, 15);
+        using (var bmp = new Bitmap(S, S))
         {
             using (var g = Graphics.FromImage(bmp))
             {
                 g.Clear(Color.Transparent);
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
-
-                using (var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel))
-                using (var brush = new SolidBrush(color))
-                {
-                    var sf = new StringFormat();
-                    sf.Alignment = StringAlignment.Center;
-                    sf.LineAlignment = StringAlignment.Center;
-                    g.DrawString(text, font, brush, 32, 32, sf);
-                }
+                DrawFit(g, text, color, halo, offline ? 3.6f : 2f, new RectangleF(1, 2, S - 2, S - 4));
             }
 
             IntPtr hIcon = bmp.GetHicon();
             return Icon.FromHandle(hIcon);
+        }
+    }
+
+    // Digits are never stretched taller than 1 / MinSqueeze of their natural shape; InkGap is the
+    // space between characters, in the 100-unit em they are laid out in.
+    private const float MinSqueeze = 0.85f;
+    private const float InkGap = 9f;
+
+    // The text as one outline path. Each character is placed by its ink, not by its advance
+    // width, so a narrow "1" takes little room and "111" needs far less squeezing to fit.
+    private static System.Drawing.Drawing2D.GraphicsPath TightText(string text)
+    {
+        var path = new System.Drawing.Drawing2D.GraphicsPath();
+        using (var family = new FontFamily("Segoe UI"))
+        {
+            float x = 0;
+            foreach (char ch in text)
+            {
+                using (var glyph = new System.Drawing.Drawing2D.GraphicsPath())
+                {
+                    glyph.AddString(ch.ToString(), family, (int)FontStyle.Bold, 100f, new PointF(0, 0), StringFormat.GenericTypographic);
+                    RectangleF cb = glyph.GetBounds();
+                    if (cb.Width <= 0) continue;
+                    using (var m = new System.Drawing.Drawing2D.Matrix())
+                    {
+                        m.Translate(x - cb.X, 0);
+                        glyph.Transform(m);
+                    }
+                    path.AddPath(glyph, false);
+                    x += cb.Width + InkGap;
+                }
+            }
+        }
+        return path;
+    }
+
+    // Draws text as an outline path scaled to fill the box (digits as tall as the box allows),
+    // with a thin halo so it reads on any taskbar.
+    private static void DrawFit(Graphics g, string text, Color color, Color halo, float haloWidth, RectangleF box)
+    {
+        using (var path = TightText(text))
+        {
+            RectangleF b = path.GetBounds();
+            if (b.Width <= 0 || b.Height <= 0) return;
+            // Fill the box height; if the text is too wide, squeeze it horizontally (never
+            // below MinSqueeze) and only then shrink it.
+            float fitW = box.Width / b.Width, fitH = box.Height / b.Height;
+            float sy = Math.Min(fitH, fitW / MinSqueeze);
+            float sx = Math.Min(sy, fitW);
+            using (var m = new System.Drawing.Drawing2D.Matrix())
+            {
+                m.Translate(box.X + box.Width / 2f, box.Y + box.Height / 2f);
+                m.Scale(sx, sy);
+                m.Translate(-(b.X + b.Width / 2f), -(b.Y + b.Height / 2f));
+                path.Transform(m);
+            }
+            using (var pen = new Pen(halo, haloWidth))
+            using (var brush = new SolidBrush(color))
+            {
+                pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                g.DrawPath(pen, path);
+                g.FillPath(brush, path);
+            }
         }
     }
 }

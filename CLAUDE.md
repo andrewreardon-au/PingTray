@@ -1,6 +1,6 @@
 # PingTray
 
-**v1.3** — 2026-07-24
+**v1.4** — 2026-10-09
 **Author:** Andrew Reardon, andrewreardon@gmail.com
 
 A standalone Windows system tray app that shows live ping latency as a
@@ -49,12 +49,33 @@ every 5s; both are overridable via command-line args (see below).
   `FailureThreshold * IntervalMs` (~15-17s at the defaults). Retargeting via
   the Settings dialog resets both `_consecutiveFailures` and `_lastGoodMs`
   so stale state from the old target doesn't leak into the new one.
-- Renders the latency as text onto a 64x64 bitmap, converts it to an icon via
-  `Bitmap.GetHicon()`, and sets it as the `NotifyIcon`'s icon. Windows then
-  scales it down into the actual tray slot (~16-24px depending on display
-  scaling) — this is a fixed OS-level constraint, not something the app
-  controls, so digit "bigness" is maximized by filling as much of the source
-  canvas as possible.
+- Renders the latency as outlined text onto a 32x32 bitmap (`RenderIcon` /
+  `DrawFit`, the same drawing as HeatTray: the number is a `GraphicsPath`
+  outline scaled to fill the canvas, with a thin halo), converts it to an
+  icon via `Bitmap.GetHicon()`, and sets it as the `NotifyIcon`'s icon.
+  Windows then scales it down into the actual tray slot (~16-24px depending
+  on display scaling) — this is a fixed OS-level constraint, not something
+  the app controls, so digit "bigness" is maximized by filling as much of
+  the source canvas as possible. `TightText` places each character by its
+  ink width (a narrow "1" takes little room) and digits are never stretched
+  beyond `MinSqueeze` (0.85) of their natural shape, so numbers are big but
+  not elongated. Before this (up to the released v1.3) it called `DrawString`
+  at a font size chosen by digit count on a 64x64 canvas: thin digits only
+  5-13 px tall at 125% scaling, no outline, and the same colours on every
+  taskbar. Measured at 125%: 1-2 digit numbers 15-19 px tall now (outline
+  included), 3 digits 11-15 px, "999+" 8 px.
+  Known and left alone (Fable review of this change): the canvas is 32 px
+  like HeatTray's, so at 250% scaling and above (40-48 px tray slots) the
+  icon is upscaled and a little soft where the old 64 px canvas was
+  downscaled (exact at 200%, downscaled at 100-150%); the fitted path sits
+  half a pixel off the box (GDI+ default pixel offset) so the halo is
+  clipped by 0.5 px on the right and bottom - invisible at 20 px; and
+  `new FontFamily("Segoe UI")` throws if the font is missing (the old
+  `new Font(...)` fell back silently) - unreachable on Windows 10/11.
+  Release note: v1.4 (2026-10-09) is this icon drawing. The `v1.3` tag and
+  its release zip hold the old exe; a GitHub release for v1.4 needs the new
+  `dist/PingTray.exe` zipped (the README's "latest release zip" link points
+  at whichever release is newest).
 - Old icon handles are explicitly destroyed via `DestroyIcon` (P/Invoke) —
   `Icon.Dispose()` alone does *not* release HICONs created by `GetHicon()`,
   which would otherwise leak GDI handles on a long-running always-on app.
@@ -77,6 +98,18 @@ every 5s; both are overridable via command-line args (see below).
 | 50–150 ms    | Orange |
 | ≥ 150 ms     | Red    |
 | Offline (after 3 consecutive failures) | Black "0" |
+
+The colours follow the Windows taskbar theme: `IsLightTaskbar()` reads
+`HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\SystemUsesLightTheme`
+(the system theme, dark when missing) on every redraw, i.e. every ping. Dark
+taskbar: LimeGreen / Orange / Red with a dark outline; light taskbar: darker
+shades (0,130,0 / 205,100,0 / 200,0,0) with a light outline (the old colours
+were about 2:1 on white for green and orange, 4:1 for red). The offline "0"
+is black on both but always gets a bold (3.6 px) light outline: plain black
+on a dark taskbar was nearly invisible (about 1.4:1 on a maroon accent
+taskbar). `RenderIcon(text, tone,
+light)` takes `light` explicitly as the test seam - do not flip the registry
+value to test, render onto light backgrounds instead.
 
 Hovering the tray icon shows the exact ms value plus the same range legend,
 e.g. `Ping to 1.1.1.1: 23 ms (<50 / 50-150 / ≥150)`. The legend is omitted

@@ -1,6 +1,6 @@
 PING TRAY
 
-v1.3 -- 2026-07-24
+v1.4 -- 2026-10-09
 Author: Andrew Reardon, andrewreardon@gmail.com
 
 Shows your network latency as a number in the system tray, right next to
@@ -16,6 +16,22 @@ WHAT THE NUMBER MEANS
 
 Hover over the icon to see the exact number and these ranges. It checks
 every 5 seconds by default.
+
+The number is drawn big and bold with a thin outline, so it reads on any
+taskbar colour. On a light Windows taskbar the colours switch to darker
+shades, and the offline "0" has a light outline so it shows up on a dark
+taskbar too.
+
+
+WHAT'S NEW IN v1.4
+
+  * Bigger, bolder numbers: roughly 1.5 to 2 times taller in the tray than
+    before, with an outline so they stay readable on any background.
+  * Follows your Windows light/dark taskbar: the old light green and orange
+    were hard to read on a light taskbar.
+  * The offline "0" shows on a dark taskbar (it used to be black on dark).
+  * Nothing else changed: pinging, settings and the command-line options
+    work as before.
 
 
 GETTING STARTED

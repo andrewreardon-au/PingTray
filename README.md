@@ -1,11 +1,11 @@
 # Ping Tray
 
-**v1.3** - 2026-07-24
+**v1.4** - 2026-10-09
 **Author:** Andrew Reardon, andrewreardon@gmail.com
 
 Shows your network latency as a number in the system tray.
 
-![Ping Tray showing 11 ms in the system tray, with the hover tooltip](screenshots/PingTray-screenshot_tray.png)
+![Ping Tray showing 42 ms in the system tray, with the hover tooltip](screenshots/PingTray-screenshot_tray.png)
 
 ## What the number means
 
@@ -17,6 +17,15 @@ Shows your network latency as a number in the system tray.
 | ⚫ Black "0" | Offline - no response |
 
 Hover over the icon to see the exact number. It checks every 5 seconds by default.
+
+The number is drawn big and bold with a thin outline, so it reads on any taskbar colour. On a light Windows taskbar the colours switch to darker shades, and the offline "0" has a light outline so it shows up on a dark taskbar too.
+
+## What's new in v1.4
+
+- **Bigger, bolder numbers** - roughly 1.5 to 2 times taller in the tray than before, with an outline so they stay readable on any background.
+- **Follows your Windows light/dark taskbar** - the old light green and orange were hard to read on a light taskbar.
+- **The offline "0" shows on a dark taskbar** - it used to be black on dark.
+- Nothing else changed: pinging, settings and the command-line options work as before.
 
 ## What's in this repo
 
@@ -111,7 +120,7 @@ csc.exe /nologo /target:winexe /platform:x64 /out:dist\PingTray.exe /win32icon:s
 SHA-256 of the committed `dist/PingTray.exe`:
 
 ```
-0615B895C3B47DB6BF8FDC83AF567FBE9532E4B2F4BFFC39799EDE09AB94B5A7
+87C9B4D0E430B330117BD69AF80B0A5F171CD271EBC7B6F1E669E7E03DBC0520
 ```
 
 The exe is **not code-signed**, so SmartScreen may warn about it after downloading (right-click → Properties → **Unblock**, or just build it yourself - see below).
