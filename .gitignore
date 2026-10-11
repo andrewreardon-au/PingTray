@@ -1,3 +1,7 @@
 ﻿# Saved settings written next to the exe at runtime
 settings*.ini
 dist/settings*.ini
+
+# Notes for the AI coding assistant: kept locally, not published
+CLAUDE.md
+process.md
