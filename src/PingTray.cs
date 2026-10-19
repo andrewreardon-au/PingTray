@@ -138,6 +138,80 @@ internal static class PingTray
 
     private static string ConfigPath;
 
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetCurrentPackageFullName(ref int packageFullNameLength, System.Text.StringBuilder packageFullName);
+
+    // True when running from an installed MSIX package (the Microsoft Store build). The install folder is
+    // then read-only and per-user files belong in LocalAppData, and "start at login" is a package setting
+    // that Windows owns rather than a Run-key entry.
+    private static bool IsPackaged()
+    {
+        try
+        {
+            int length = 0;
+            const int AppModelErrorNoPackage = 15700;
+            return GetCurrentPackageFullName(ref length, null) != AppModelErrorNoPackage;
+        }
+        catch (EntryPointNotFoundException)
+        {
+            return false;
+        }
+    }
+
+    // Packaged: %LOCALAPPDATA%\PingTray\settings.ini (the package folder cannot be written to).
+    // Otherwise next to the exe, so the unzipped folder stays portable.
+    private static string SettingsFilePath()
+    {
+        if (IsPackaged())
+        {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PingTray", "settings.ini");
+        }
+        return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.ini");
+    }
+
+    // "Start with Windows" for the unzipped build: a per-user Run-key entry that launches this exe with no
+    // options, so it resumes the settings saved from the Settings box. (The Store build cannot use the Run
+    // key; its startup entry is declared in the package manifest and switched in Windows Settings.)
+    private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    private const string RunValueName = "PingTray";
+
+    private static string RunCommand()
+    {
+        return "\"" + Application.ExecutablePath + "\"";
+    }
+
+    private static bool GetRunAtLogin()
+    {
+        try
+        {
+            using (RegistryKey k = Registry.CurrentUser.OpenSubKey(RunKeyPath))
+            {
+                string v = k == null ? null : k.GetValue(RunValueName) as string;
+                return string.Equals(v, RunCommand(), StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void SetRunAtLogin(bool on)
+    {
+        try
+        {
+            using (RegistryKey k = Registry.CurrentUser.CreateSubKey(RunKeyPath))
+            {
+                if (on) k.SetValue(RunValueName, RunCommand());
+                else k.DeleteValue(RunValueName, false);
+            }
+        }
+        catch
+        {
+            // Best-effort, like saving the settings: a locked-down profile just keeps it off.
+        }
+    }
+
     private static NotifyIcon _notifyIcon;
     private static Ping _ping;
     private static Icon _currentIcon;
@@ -151,7 +225,7 @@ internal static class PingTray
             return;
         }
 
-        ConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.ini");
+        ConfigPath = SettingsFilePath();
 
         // No explicit options: resume whatever was being monitored last
         // time (saved by the Settings dialog). Any explicit option means
@@ -515,7 +589,8 @@ internal static class PingTray
                "  -v, --version                show version info and exit\r\n" +
                "\r\n" +
                "With no options, the settings last saved from the tray's\r\n" +
-               "Settings dialog (settings.ini next to the exe) are used.\r\n" +
+               "Settings dialog (settings.ini next to the exe, or in\r\n" +
+               "%LOCALAPPDATA%\\PingTray for the Microsoft Store build) are used.\r\n" +
                "Command-line options always win and are never persisted.\r\n" +
                "One instance per target and method; others run side by side.";
     }
@@ -725,6 +800,7 @@ internal static class PingTray
     {
         try
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath));
             File.WriteAllLines(ConfigPath, new[]
             {
                 "target=" + Target,
@@ -753,7 +829,7 @@ internal static class PingTray
             form.StartPosition = FormStartPosition.CenterScreen;
             form.MinimizeBox = false;
             form.MaximizeBox = false;
-            form.ClientSize = new Size(305, 370);
+            form.ClientSize = new Size(305, 400);
             // Every input is 160 px wide: the widest drop-down item ("Wi-Fi / broadband (default)") needs about 157 px to show in full, so this is as
             // narrow as they can all go together. The form keeps 15 px either side of the labels and boxes, and the hint (four lines at this width) fits.
 
@@ -793,17 +869,38 @@ internal static class PingTray
             var redLabel = new Label { Text = "Red from (ms):", Left = 15, Top = 230, Width = 110 };
             var redBox = new TextBox { Name = "redBox", Text = RedMs.ToString(), Left = 130, Top = 227, Width = 160 };
 
+            // Start at login. The unzipped build owns this (a Run-key entry, applied with OK); in the Store
+            // build Windows owns it, so there is a link to the page where it is switched instead.
+            bool packaged = IsPackaged();
+            Control startupControl;
+            CheckBox startupBox = null;
+            if (packaged)
+            {
+                var startupLink = new LinkLabel { Text = "Start with Windows: change in Windows Settings", Left = 15, Top = 264, Width = 275, Height = 18 };
+                startupLink.LinkClicked += (s, e) =>
+                {
+                    try { Process.Start("ms-settings:startupapps"); }
+                    catch { }
+                };
+                startupControl = startupLink;
+            }
+            else
+            {
+                startupBox = new CheckBox { Text = "Start with Windows", Left = 15, Top = 262, Width = 275, Checked = GetRunAtLogin() };
+                startupControl = startupBox;
+            }
+
             // The hint, which turns into the message when OK finds something wrong (see FormClosing below).
             var hint = new Label
             {
                 Name = "hint",
                 Text = "Pick a connection type for suggested limits, or type your own. Replies faster than the orange limit are green. " +
                        "If ping is blocked on your network, try TCP connect or a DNS query.",
-                Left = 15, Top = 262, Width = 275, Height = 56, ForeColor = SystemColors.GrayText
+                Left = 15, Top = 292, Width = 275, Height = 56, ForeColor = SystemColors.GrayText
             };
 
-            var okButton = new Button { Text = "OK", Left = 115, Top = 330, Width = 80, DialogResult = DialogResult.OK };
-            var cancelButton = new Button { Text = "Cancel", Left = 210, Top = 330, Width = 80, DialogResult = DialogResult.Cancel };
+            var okButton = new Button { Text = "OK", Left = 115, Top = 360, Width = 80, DialogResult = DialogResult.OK };
+            var cancelButton = new Button { Text = "Cancel", Left = 210, Top = 360, Width = 80, DialogResult = DialogResult.Cancel };
 
             // The suggestions and the two boxes follow each other: choosing a connection type fills in
             // its limits, and typing limits that match a type (or no type) updates the drop-down.
@@ -842,6 +939,7 @@ internal static class PingTray
             form.Controls.Add(orangeBox);
             form.Controls.Add(redLabel);
             form.Controls.Add(redBox);
+            form.Controls.Add(startupControl);
             form.Controls.Add(hint);
             form.Controls.Add(okButton);
             form.Controls.Add(cancelButton);
@@ -916,6 +1014,7 @@ internal static class PingTray
             OrangeMs = newOrange;
             RedMs = newRed;
             _timer.Interval = IntervalMs;
+            if (startupBox != null && startupBox.Checked != GetRunAtLogin()) SetRunAtLogin(startupBox.Checked);
             SaveSettings();
             UpdatePing();
         }

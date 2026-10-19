@@ -27,21 +27,36 @@ arrow instead of showing them next to the clock. To pin it visibly:
 
 STARTING AUTOMATICALLY AT LOGIN
 
+In the Settings box, tick Start with Windows to start PingTray when you
+sign in. Untick it to stop.
+
+The older method still works if you want a shortcut that uses --target=
+options. Put the shortcut in your Startup folder:
+
   1. Right-click PingTray.exe (in the dist folder) and choose Create
      shortcut.
   2. Press Win + R, type shell:startup, and press Enter. This opens your
      Startup folder.
   3. Drag the shortcut you created into that folder.
 
-To turn it off again, delete the shortcut from the Startup folder.
+To turn that off again, delete the shortcut from the Startup folder.
 
 
 MOVING IT TO ANOTHER COMPUTER
 
 Copy the whole PingTray folder anywhere (a USB drive, a cloud folder) and
 run dist\PingTray.exe on the other machine. There is nothing else to
-install. Repeat the autostart steps there if you want it to start at login
-on that machine too.
+install. Tick Start with Windows there again if you want it to start at
+login on that machine too.
+
+
+MICROSOFT STORE VERSION
+
+A Microsoft Store version is planned. It is the same app. It installs and
+updates through the Store, and its settings are kept in
+%LOCALAPPDATA%\PingTray. Start at login is switched on in Windows Settings >
+Apps > Startup. PingTray.exe --target=... works from the command line and
+from shortcuts.
 
 
 WHAT THE NUMBER MEANS
