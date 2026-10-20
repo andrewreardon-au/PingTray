@@ -14,6 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Where is the SDK? (diagnostic)
+        shell: powershell
+        run: |
+          Get-ChildItem "C:\Program Files*","C:\Windows\System32" -Recurse -Include makeappx.exe,signtool.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+          Get-ChildItem "C:\Program Files (x86)\Windows Kits" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+
       # Unsigned package: this is the one to upload to Partner Center.
       # Pass the real Identity values from Partner Center via repo variables.
       - name: Build unsigned MSIX (Store)
