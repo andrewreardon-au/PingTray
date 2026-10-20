@@ -64,8 +64,8 @@ internal static class PingTray
     private const ushort VK_RETURN = 0x0D;
     private const uint FILE_TYPE_CHAR = 2;
 
-    internal const string Version = "1.5";
-    private const string VersionDate = "2026-10-12";
+    internal const string Version = "1.6";
+    private const string VersionDate = "2026-10-20";
     private const string Author = "Andrew Reardon";
     private const string AuthorEmail = "andrewreardon@gmail.com";
 
