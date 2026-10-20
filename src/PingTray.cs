@@ -64,10 +64,10 @@ internal static class PingTray
     private const ushort VK_RETURN = 0x0D;
     private const uint FILE_TYPE_CHAR = 2;
 
-    internal const string Version = "1.6";
+    internal const string Version = "1.7";
     private const string VersionDate = "2026-10-20";
     private const string Author = "Andrew Reardon";
-    private const string AuthorEmail = "andrewreardon@gmail.com";
+    private const string ProjectUrl = "https://github.com/andrewreardon-au/PingTray";
 
     private static string Target = "1.1.1.1";
     private static int IntervalMs = 5000;
@@ -601,7 +601,7 @@ internal static class PingTray
     {
         return "PingTray " + Version + " (" + VersionDate + ")\r\n" +
                "Live ping latency in the system tray.\r\n" +
-               Author + " <" + AuthorEmail + ">";
+               Author + "\r\n" + ProjectUrl;
     }
 
     // Compiled as /target:winexe, so there is no console by default. When
@@ -708,19 +708,28 @@ internal static class PingTray
                 Image = Icon.ExtractAssociatedIcon(Application.ExecutablePath).ToBitmap()
             };
 
+            // Three controls so the project address can be a link: the text above it, the link, the text below it.
             var label = new Label
             {
-                Left = 62, Top = 15, Width = 255, Height = 125,
+                Left = 62, Top = 15, Width = 255, Height = 75,
                 Text = "PingTray " + Version + " (" + VersionDate + ")\n\n" +
                        "Live ping latency in the system tray.\n\n" +
-                       Author + "\n" + AuthorEmail + "\n\n" +
-                       "Command-line options: PingTray.exe -h"
+                       Author
             };
+            var projectLink = new LinkLabel { Left = 62, Top = 90, Width = 255, Height = 15, Text = ProjectUrl.Replace("https://", "") };
+            projectLink.LinkClicked += (s, e) =>
+            {
+                try { Process.Start(ProjectUrl); }
+                catch { }
+            };
+            var helpLabel = new Label { Left = 62, Top = 105, Width = 255, Height = 30, Text = "\nCommand-line options: PingTray.exe -h" };
 
             var okButton = new Button { Text = "OK", Left = 235, Top = 150, Width = 80, DialogResult = DialogResult.OK };
 
             form.Controls.Add(iconBox);
             form.Controls.Add(label);
+            form.Controls.Add(projectLink);
+            form.Controls.Add(helpLabel);
             form.Controls.Add(okButton);
             form.AcceptButton = okButton;
             form.CancelButton = okButton;

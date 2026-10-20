@@ -1,6 +1,6 @@
 PINGTRAY
 
-v1.6 (2026-10-20)
+v1.7 (2026-10-20)
 Author: Andrew Reardon, andrewreardon@gmail.com
 
 Shows your network latency as a number in the system tray, right next to
@@ -314,11 +314,13 @@ notice instead of starting a duplicate. For version and contact details,
 right-click the tray icon and choose About PingTray...
 
 
-WHAT'S NEW IN v1.6
+WHAT'S NEW IN v1.7
 
   * Start with Windows: a tick box in Settings starts PingTray when you
     sign in, with no administrator rights and no shortcut to set up.
     Untick it to stop. The Settings window is a little taller to fit it.
+  * GitHub address in the About box: a link to the project page replaces
+    the email address, and -v prints the same address.
   * Your saved settings carry over unchanged.
 
 
