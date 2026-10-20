@@ -93,16 +93,19 @@ if ($Sideload) {
         -Password (ConvertTo-SecureString $pw -AsPlainText -Force) | Out-Null
     Export-Certificate -Cert $cert -FilePath $cer | Out-Null
 
-    & $signtool sign /fd SHA256 /a /f $pfx /p $pw $msix
+    # Sign a copy: the unsigned package above is the one to upload to Partner Center.
+    $signed = "$out\PingTray_${version}_x64_sideload.msix"
+    Copy-Item $msix $signed -Force
+    & $signtool sign /fd SHA256 /a /f $pfx /p $pw $signed
     if ($LASTEXITCODE -ne 0) {
         throw "signtool failed."
     }
 
     Write-Host ""
-    Write-Host "Signed $msix with a self-signed certificate (pfx password: $pw)."
+    Write-Host "Signed $signed with a self-signed certificate (pfx password: $pw)."
     Write-Host "The .pfx is git-ignored; never commit it. To install for testing:"
     Write-Host "  1. In an ADMIN PowerShell, trust the certificate:"
     Write-Host "       Import-Certificate -FilePath `"$cer`" -CertStoreLocation Cert:\LocalMachine\TrustedPeople"
     Write-Host "  2. Install the package:"
-    Write-Host "       Add-AppxPackage `"$msix`""
+    Write-Host "       Add-AppxPackage `"$signed`""
 }

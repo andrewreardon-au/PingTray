@@ -6,11 +6,11 @@ Internal notes. Factual, not marketing.
 
 - Same repo, one source file. No separate Store codebase.
 - The app detects at runtime whether it is running from an MSIX package (`GetCurrentPackageFullName`).
-- The zip build stays portable. It does not need to change.
+- The zip build stays portable. Its only change is a Start with Windows checkbox in Settings, which writes a per-user Run registry value.
 
 ## (b) What changes in the packaged build
 
-- Settings are read and written at `%LOCALAPPDATA%\PingTray\settings.ini`. The package folder is read-only.
+- Settings are read and written at `%LOCALAPPDATA%\PingTray\settings.ini`. The package folder is read-only. Windows redirects that path into the package's private LocalCache (`%LOCALAPPDATA%\Packages\<PackageFamilyName>\LocalCache\Local\PingTray`), and uninstalling removes it.
 - Start at login is a manifest `startupTask`. The user enables it in Windows Settings > Apps > Startup. The Run registry key cannot be used from MSIX.
 - `PingTray.exe --target=...` works through an app execution alias.
 
@@ -45,7 +45,7 @@ Source: two quick web searches on 2026-10-19. Versions, Windows 11 compatibility
 
 An outage log is the obvious next feature to compete with PingMeter.
 
-## (e) Store checklist
+## (d) Store checklist
 
 - [ ] Partner Center individual account. One-off fee; check the current amount.
 - [ ] Reserve the name "PingTray" after searching the Store.
@@ -58,6 +58,6 @@ An outage log is the obvious next feature to compete with PingMeter.
 - [ ] Upload the UNSIGNED MSIX built by `build-store.ps1`. The Store signs it.
 - [ ] Test with `build-store.ps1 -Sideload` and the Windows App Certification Kit on a Windows machine before submitting.
 
-## (f) Unverified
+## (e) Unverified
 
 Nothing in the packaging has been built or run yet. It was written on Linux with no Windows tooling.

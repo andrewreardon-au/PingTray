@@ -158,7 +158,8 @@ internal static class PingTray
         }
     }
 
-    // Packaged: %LOCALAPPDATA%\PingTray\settings.ini (the package folder cannot be written to).
+    // Packaged: %LOCALAPPDATA%\PingTray\settings.ini (the package folder cannot be written to). Windows
+    // redirects that into the package's private LocalCache, which an uninstall removes.
     // Otherwise next to the exe, so the unzipped folder stays portable.
     private static string SettingsFilePath()
     {
@@ -186,8 +187,9 @@ internal static class PingTray
         {
             using (RegistryKey k = Registry.CurrentUser.OpenSubKey(RunKeyPath))
             {
-                string v = k == null ? null : k.GetValue(RunValueName) as string;
-                return string.Equals(v, RunCommand(), StringComparison.OrdinalIgnoreCase);
+                // Any entry counts, even one left pointing at an old folder after the exe was moved:
+                // OK then rewrites it to this exe (ticked) or removes it (unticked).
+                return k != null && k.GetValue(RunValueName) != null;
             }
         }
         catch
@@ -589,8 +591,8 @@ internal static class PingTray
                "  -v, --version                show version info and exit\r\n" +
                "\r\n" +
                "With no options, the settings last saved from the tray's\r\n" +
-               "Settings dialog (settings.ini next to the exe, or in\r\n" +
-               "%LOCALAPPDATA%\\PingTray for the Microsoft Store build) are used.\r\n" +
+               "Settings dialog (settings.ini next to the exe; private to the\r\n" +
+               "app in the Microsoft Store build) are used.\r\n" +
                "Command-line options always win and are never persisted.\r\n" +
                "One instance per target and method; others run side by side.";
     }
@@ -1014,7 +1016,7 @@ internal static class PingTray
             OrangeMs = newOrange;
             RedMs = newRed;
             _timer.Interval = IntervalMs;
-            if (startupBox != null && startupBox.Checked != GetRunAtLogin()) SetRunAtLogin(startupBox.Checked);
+            if (startupBox != null) SetRunAtLogin(startupBox.Checked);
             SaveSettings();
             UpdatePing();
         }

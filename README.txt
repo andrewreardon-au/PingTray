@@ -53,8 +53,8 @@ login on that machine too.
 MICROSOFT STORE VERSION
 
 A Microsoft Store version is planned. It is the same app. It installs and
-updates through the Store, and its settings are kept in
-%LOCALAPPDATA%\PingTray. Start at login is switched on in Windows Settings >
+updates through the Store, and its settings are private to the app and
+removed if you uninstall it. Start at login is switched on in Windows Settings >
 Apps > Startup. PingTray.exe --target=... works from the command line and
 from shortcuts.
 

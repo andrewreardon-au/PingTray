@@ -30,8 +30,6 @@ OUT = {
     "StoreLogo.png": 50,
     "Square44x44Logo.png": 44,
     "Square150x150Logo.png": 150,
-    "Square44x44Logo.targetsize-256_altform-unplated.png": 256,
-    "StoreListing_300.png": 300,
 }
 
 if __name__ == "__main__":
@@ -40,3 +38,8 @@ if __name__ == "__main__":
     for name, size in OUT.items():
         logo(size).save(os.path.join(d, name))
         print("wrote", name)
+    # The 300x300 Partner Center listing logo is uploaded in the Store listing, not packaged.
+    l = os.path.join(os.path.dirname(d), "listing")
+    os.makedirs(l, exist_ok=True)
+    logo(300).save(os.path.join(l, "StoreListing_300.png"))
+    print("wrote listing/StoreListing_300.png")
