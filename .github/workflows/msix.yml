@@ -4,9 +4,6 @@ on:
   workflow_dispatch:
   push:
     tags: ["v*"]
-    # TEMPORARY: lets CI run from this branch, where workflow_dispatch is unavailable until the file is on main.
-    # Remove before merging.
-    branches: ["claude/nifty-shannon-71c5eo"]
 
 jobs:
   package:
