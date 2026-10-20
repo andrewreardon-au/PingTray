@@ -1,6 +1,6 @@
 PINGTRAY
 
-v1.5 (2026-10-12)
+v1.6 (2026-10-20)
 Author: Andrew Reardon, andrewreardon@gmail.com
 
 Shows your network latency as a number in the system tray, right next to
@@ -54,9 +54,9 @@ MICROSOFT STORE VERSION
 
 A Microsoft Store version is planned. It is the same app. It installs and
 updates through the Store, and its settings are private to the app and
-removed if you uninstall it. Start at login is switched on in Windows Settings >
-Apps > Startup. PingTray.exe --target=... works from the command line and
-from shortcuts.
+removed if you uninstall it. Start at login is switched on in Windows
+Settings > Apps > Startup. PingTray.exe --target=... works from the
+command line and from shortcuts.
 
 
 WHAT THE NUMBER MEANS
@@ -312,6 +312,14 @@ given, the command line always wins: the saved file is ignored and flags
 are never saved. Launching a target that is already being watched shows a
 notice instead of starting a duplicate. For version and contact details,
 right-click the tray icon and choose About PingTray...
+
+
+WHAT'S NEW IN v1.6
+
+  * Start with Windows: a tick box in Settings starts PingTray when you
+    sign in, with no administrator rights and no shortcut to set up.
+    Untick it to stop. The Settings window is a little taller to fit it.
+  * Your saved settings carry over unchanged.
 
 
 WHAT'S NEW IN v1.5

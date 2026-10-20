@@ -1,6 +1,6 @@
 # PingTray
 
-**v1.5** (2026-10-12) by Andrew Reardon, andrewreardon@gmail.com
+**v1.6** (2026-10-20) by Andrew Reardon, andrewreardon@gmail.com
 
 Shows your network latency as a number in the system tray.
 
@@ -205,6 +205,11 @@ A `--target` that is not a host name or an IP address (for example `-t 1.1.1`) i
 
 ![The About box](screenshots/PingTray-screenshot_about.png)
 
+## What's new in v1.6
+
+- **Start with Windows:** a tick box in Settings starts PingTray when you sign in, with no administrator rights and no shortcut to set up. Untick it to stop. The Settings window is a little taller to fit it.
+- Your saved settings carry over unchanged.
+
 ## What's new in v1.5
 
 - **TCP connect and a DNS query as alternatives to ping**, for networks that block ping: a **Method** setting (and `--method=tcp|udp --port=<n>`). If one method is blocked and another works, the tooltip tells you.
@@ -247,7 +252,7 @@ csc.exe /nologo /target:winexe /platform:x64 /out:dist\PingTray.exe /win32icon:s
 SHA-256 of the committed `dist/PingTray.exe`:
 
 ```
-D2E7597559D840E0C0DFE7FDE6E3AB0214ECD300092B41B7897E90081E664FE2
+5C14715B4E9BDDB728AF6E96F065D4CF0A94D0C75F2B63AAFF548386D5E3C718
 ```
 
 The exe is **not code-signed**, so SmartScreen may warn about it after downloading (right-click > Properties > **Unblock**, or build it yourself, see below).
