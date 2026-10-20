@@ -58,6 +58,19 @@ An outage log is the obvious next feature to compete with PingMeter.
 - [ ] Upload the UNSIGNED MSIX built by `build-store.ps1`. The Store signs it.
 - [ ] Test with `build-store.ps1 -Sideload` and the Windows App Certification Kit on a Windows machine before submitting.
 
-## (e) Unverified
+## (e) Verification status
 
-Nothing in the packaging has been built or run yet. It was written on Linux with no Windows tooling.
+Verified on Windows 11 (20 Oct 2026) with the Windows SDK 10.0.26100 and a self-signed sideload build:
+
+- `build-store.ps1` packs (`makeappx`) and signs (`signtool`) after two fixes: the SDK lookup (Windows PowerShell 5.1 returns nothing for `Get-ChildItem "$kits\*\x64" -Filter`, so the version folders are listed first) and the alias element, which `makeappx` requires as `<uap5:ExecutionAlias>` inside `<uap5:AppExecutionAlias>` (not `desktop:ExecutionAlias`).
+- Installed package: starts from Start; Settings shows the Windows Settings link instead of the checkbox; settings persist across a restart and live in `%LOCALAPPDATA%\Packages\<PackageFamilyName>\LocalCache\Local\PingTray\settings.ini` (nothing in the install folder or the real `%LOCALAPPDATA%\PingTray`); the alias works (`PingTray.exe -v`, and `--target=...` starts a second instance); the startup task is registered Off, shows in Windows Settings > Apps > Startup, and the app starts at sign-in once switched on; uninstalling removes the package, its LocalCache, the alias and the startup registration.
+- The unpackaged build's Settings dialog (new checkbox row) has no overlaps, and the checkbox writes and removes `HKCU\...\Run\PingTray`.
+- GitHub Actions `msix` (windows-latest has the SDK at the standard path) builds the unsigned package and uploads it as an artifact.
+
+Not verified: Windows App Certification Kit results, and anything in Partner Center or the Store itself.
+
+Notes:
+
+- Testing needs the sideload certificate trusted in `LocalMachine\TrustedPeople` (admin); remove it afterwards.
+- The alias is a per-user file in `%LOCALAPPDATA%\Microsoft\WindowsApps`, so the folder must be on PATH (it is by default).
+- If the zip build's autostart shortcut or Run entry is also on, both start at sign-in and the second shows the "already running" notice (they share one mutex). Use one.
