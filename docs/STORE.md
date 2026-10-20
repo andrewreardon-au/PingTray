@@ -47,9 +47,9 @@ An outage log is the obvious next feature to compete with PingMeter.
 
 ## (d) Store checklist
 
-- [ ] Partner Center individual account. One-off fee; check the current amount.
-- [ ] Reserve the name "PingTray" after searching the Store.
-- [ ] Identity Name, Publisher and PublisherDisplayName from Partner Center must replace the placeholders in `build-store.ps1`.
+- [x] Partner Center individual account.
+- [x] Name "PingTray" reserved (Store ID 9MV371JKHPVD).
+- [x] Identity values from Partner Center are the defaults in `build-store.ps1` (Name AndrewReardon.PingTray, Publisher CN=BFD979DA-..., PFN suffix qnhc6s6t58sdy checked against the Publisher string).
 - [ ] Privacy policy URL. The app collects no data.
 - [ ] Screenshots.
 - [ ] Age rating.

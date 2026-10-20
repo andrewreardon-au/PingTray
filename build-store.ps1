@@ -11,12 +11,12 @@ for local testing only. That build cannot be submitted to the Store.
 IMPORTANT: Partner Center provides the real Identity Name, Publisher and
 PublisherDisplayName for your reserved app name (Product identity page).
 They MUST match what you pass here, or the Store submission is rejected.
-The defaults below are placeholders.
+The defaults below are the values Partner Center showed for the reserved name (20 Oct 2026).
 #>
 
 param(
     [string]$IdentityName = "AndrewReardon.PingTray",
-    [string]$Publisher = "CN=PingTrayDev",
+    [string]$Publisher = "CN=BFD979DA-5768-4CA3-9A76-86E191905F0E",
     [string]$PublisherDisplayName = "Andrew Reardon",
     [switch]$Sideload
 )
