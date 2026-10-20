@@ -4,7 +4,7 @@
 
 Shows your network latency as a number in the system tray.
 
-![PingTray's red 194 ms icon in the system tray, with the hover tooltip showing the colour limits and "Like 56K dial-up from 1997"](screenshots/PingTray-screenshot_tray.png)
+![PingTray's red 164 ms icon in the system tray, with the hover tooltip showing the colour limits and "Like 56K dial-up from 1997"](screenshots/PingTray-screenshot_tray.png)
 
 ## Getting started
 
