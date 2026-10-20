@@ -57,9 +57,13 @@ $manifest = $manifest.Replace('@VERSION@', $version)
 # 4. Locate makeappx.exe and signtool.exe (newest Windows SDK)
 $kits = "${env:ProgramFiles(x86)}\Windows Kits\10\bin"
 function Find-SdkTool([string]$name) {
-    $found = Get-ChildItem "$kits\*\x64" -Filter $name -ErrorAction SilentlyContinue |
-        Sort-Object { try { [version]$_.Directory.Parent.Name } catch { [version]"0.0" } } -Descending |
-        Select-Object -First 1 -ExpandProperty FullName
+    # List the version folders first: in Windows PowerShell 5.1, Get-ChildItem "$kits\*\x64" -Filter returns nothing.
+    $found = Get-ChildItem $kits -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } |
+        Sort-Object { [version]$_.Name } -Descending |
+        ForEach-Object { Join-Path $_.FullName "x64\$name" } |
+        Where-Object { Test-Path $_ } |
+        Select-Object -First 1
     if (-not $found) {
         throw "Could not find $name under $kits. Install the Windows 10/11 SDK."
     }

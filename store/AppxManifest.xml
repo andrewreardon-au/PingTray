@@ -43,7 +43,7 @@
         </uap5:Extension>
         <uap5:Extension Category="windows.appExecutionAlias" Executable="PingTray.exe" EntryPoint="Windows.FullTrustApplication">
           <uap5:AppExecutionAlias>
-            <desktop:ExecutionAlias Alias="PingTray.exe" />
+            <uap5:ExecutionAlias Alias="PingTray.exe" />
           </uap5:AppExecutionAlias>
         </uap5:Extension>
       </Extensions>
