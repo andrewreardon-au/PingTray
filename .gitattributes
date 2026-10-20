@@ -1,0 +1,6 @@
+# Keep the release zip (git archive) to the app itself: the Store packaging stays in the repo only.
+store/ export-ignore
+docs/ export-ignore
+.github/ export-ignore
+build-store.ps1 export-ignore
+.gitattributes export-ignore
