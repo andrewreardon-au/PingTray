@@ -38,6 +38,12 @@ if __name__ == "__main__":
     for name, size in OUT.items():
         logo(size).save(os.path.join(d, name))
         print("wrote", name)
+    # Unplated variants: without these Windows puts the 44x44 icon on a backplate in the user's accent
+    # colour (Startup apps list, taskbar, Start). Targetsize files are picked by size; unplated = no plate.
+    for size in (16, 24, 32, 44, 48, 256):
+        name = "Square44x44Logo.targetsize-%d_altform-unplated.png" % size
+        logo(size).save(os.path.join(d, name))
+        print("wrote", name)
     # The 300x300 Partner Center listing logo is uploaded in the Store listing, not packaged.
     l = os.path.join(os.path.dirname(d), "listing")
     os.makedirs(l, exist_ok=True)
