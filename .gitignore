@@ -10,3 +10,4 @@ process.md
 store/out/
 store/stage/
 *.pfx
+__pycache__/

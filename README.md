@@ -1,10 +1,10 @@
 # PingTray
 
-**v1.7** (2026-10-20) by Andrew Reardon, andrewreardon@gmail.com
+**v1.8** (2026-10-21) by Andrew Reardon, andrewreardon@gmail.com
 
 Shows your network latency as a number in the system tray.
 
-![PingTray's red 164 ms icon in the system tray, with the hover tooltip showing the colour limits and "Like 56K dial-up from 1997"](screenshots/PingTray-screenshot_tray.png)
+![PingTray's green 22 ms icon in the system tray, with the hover tooltip "Expected on Wi-Fi: under 50 ms" and "Running as expected"](screenshots/PingTray-screenshot_tray.png)
 
 ## Getting started
 
@@ -53,7 +53,7 @@ A Microsoft Store version is planned. It is the same app. It installs and update
 | 🔴 Red | Slow: 150 ms or higher |
 | ⚪ Grey "0" | Offline: no response |
 
-It checks every 5 seconds by default. Hover over the icon to see the exact number, the colour limits in force (and which connection-type [preset](#tuning-the-colours) they match), and whether the reply is as expected for that preset. When it is not, the [ready reckoner](#the-ready-reckoner) adds what it feels like.
+It checks every 5 seconds by default. Hover over the icon to see the exact number, which connection-type [preset](#tuning-the-colours) your limits match and what it counts as normal, and whether the reply is as expected for that preset. When it is not, the [ready reckoner](#the-ready-reckoner) adds what it feels like.
 
 The number is drawn big and bold with a thin outline, so it reads on any taskbar colour. On a light Windows taskbar the colours switch to darker shades. The offline "0" is a plain dark grey, so it looks dull and inactive but still shows on both dark and light taskbars.
 
@@ -83,13 +83,13 @@ What counts as "good" depends on the connection: 30 ms is slow on a LAN and bril
 | Satellite (geostationary) | 800 ms | 1200 ms | 450 ms |
 | 90s dial-up | 250 ms | 500 ms | 90 ms |
 
-The satellite limits are for a geostationary link (a round trip of roughly 500 ms or more). A low-orbit service such as Starlink behaves like ordinary broadband, so pick Wi-Fi / broadband for it. These are suggestions, not measurements of your line. Type your own numbers and the type just reads "Custom". The tooltip always shows the preset and the limits in force, e.g. `Preset: Wi-Fi (<50 / 50-150 / ≥150)` (it says `Preset: Custom` when your numbers match none of them). From the command line: `--orange=<ms>` and `--red=<ms>`.
+The satellite limits are for a geostationary link (a round trip of roughly 500 ms or more). A low-orbit service such as Starlink behaves like ordinary broadband, so pick Wi-Fi / broadband for it. These are suggestions, not measurements of your line. Type your own numbers and the type just reads "Custom". The tooltip always shows the preset and what it counts as normal, e.g. `Expected on Wi-Fi: under 50 ms`, or `Expected on 4G: 25 to 80 ms` for a preset with a floor (it says `Expected (custom)` when your numbers match none of them). From the command line: `--orange=<ms>` and `--red=<ms>`.
 
 Under that line the tooltip says in words how the reply compares with that preset: **Running as expected** while it is green, **Slower than expected** when it is orange, **Much slower than expected** when it is red. A green reply can also be **Faster than expected**: quicker than that kind of connection ever manages (the last column above), so it is probably not that kind of connection at all. A 22 ms reply on the 4G preset, say, is not what 4G gives. LAN, wired and Wi-Fi have no such floor, because a fast reply is always normal there, and neither do limits you type yourself ("Custom").
 
 ```
 Ping to example.org: 26 ms
-Preset: Wi-Fi (<50 / 50-150 / ≥150)
+Expected on Wi-Fi: under 50 ms
 Running as expected
 ```
 
@@ -99,14 +99,14 @@ When a reply is not what your preset expects, slower or faster, the tooltip adds
 
 ```
 Ping to example.org: 172 ms
-Preset: Wi-Fi (<50 / 50-150 / ≥150)
+Expected on Wi-Fi: under 50 ms
 Much slower than expected
 Like 56K dial-up from 1997
 ```
 
 ```
 Ping to example.org: 22 ms
-Preset: 4G (<80 / 80-200 / ≥200)
+Expected on 4G: 25 to 80 ms
 Faster than expected
 Like Wi-Fi 6 from 2019-present
 ```
@@ -136,7 +136,7 @@ The icon is different: it always shows the latest reading, in that reading's own
 
 ```
 Ping to example.org: 300 ms (usually 30 ms)
-Preset: Wi-Fi (<50 / 50-150 / ≥150)
+Expected on Wi-Fi: under 50 ms
 Running as expected
 ```
 
@@ -205,6 +205,11 @@ A `--target` that is not a host name or an IP address (for example `-t 1.1.1`) i
 
 ![The About box](screenshots/PingTray-screenshot_about.png)
 
+## What's new in v1.8
+
+- **The tooltip says what is normal, in words:** the second line now reads `Expected on Wi-Fi: under 50 ms` (or `Expected on 4G: 25 to 80 ms` for a preset with a floor) instead of `Preset: Wi-Fi (<50 / 50-150 / ≥150)`. It is the same range that "Running as expected" uses, so the two agree, and the shorter line leaves room for the reckoner line in more tooltips.
+- Your saved settings carry over unchanged.
+
 ## What's new in v1.7
 
 - **Start with Windows:** a tick box in Settings starts PingTray when you sign in, with no administrator rights and no shortcut to set up. Untick it to stop. The Settings window is a little taller to fit it.
@@ -253,7 +258,7 @@ csc.exe /nologo /target:winexe /platform:x64 /out:dist\PingTray.exe /win32icon:s
 SHA-256 of the committed `dist/PingTray.exe`:
 
 ```
-32698F8C3B3A9C4510ADAAD3BBD1F7B835F8E468729B1DD893655017AFED6D0D
+01AB5BF2D2905C9048DD5C5E9ACB3A443B9E3DCABCEE618A51A6C9209F9EDE95
 ```
 
 The exe is **not code-signed**, so SmartScreen may warn about it after downloading (right-click > Properties > **Unblock**, or build it yourself, see below).

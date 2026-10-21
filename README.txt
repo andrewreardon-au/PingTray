@@ -1,6 +1,6 @@
 PINGTRAY
 
-v1.7 (2026-10-20)
+v1.8 (2026-10-21)
 Author: Andrew Reardon, andrewreardon@gmail.com
 
 Shows your network latency as a number in the system tray, right next to
@@ -68,9 +68,9 @@ WHAT THE NUMBER MEANS
 
 Those are the default limits; you can change them (see TUNING THE COLOURS
 below). It checks every 5 seconds by default. Hover over the icon to see
-the exact number, the colour limits in force (and which connection-type
-preset they match), and whether the reply is as expected for that preset.
-When it is not, THE READY RECKONER adds what it feels like.
+the exact number, which connection-type preset your limits match and
+what it counts as normal, and whether the reply is as expected for that
+preset. When it is not, THE READY RECKONER adds what it feels like.
 
 The number is drawn big and bold with a thin outline, so it reads on any
 taskbar colour. On a light Windows taskbar the colours switch to darker
@@ -131,9 +131,10 @@ The satellite limits are for a geostationary link (a round trip of roughly
 500 ms or more). A low-orbit service such as Starlink behaves like ordinary
 broadband, so pick Wi-Fi / broadband for it. These are suggestions, not
 measurements of your line. Type your own numbers and the type just reads
-"Custom". The tooltip always shows the preset and the limits in force, e.g.
-"Preset: Wi-Fi (<50 / 50-150 / >=150)" ("Preset: Custom" when your numbers
-match none of them). From the command line: --orange=<ms> and --red=<ms>.
+"Custom". The tooltip always shows the preset and what it counts as normal,
+e.g. "Expected on Wi-Fi: under 50 ms", or "Expected on 4G: 25 to 80 ms"
+for a preset with a floor ("Expected (custom)" when your numbers match none
+of them). From the command line: --orange=<ms> and --red=<ms>.
 
 Under that line the tooltip says in words how the reply compares with that
 preset: "Running as expected" while it is green, "Slower than expected" when
@@ -146,7 +147,7 @@ always normal there, and neither do limits you type yourself ("Custom").
 For example:
 
   Ping to example.org: 26 ms
-  Preset: Wi-Fi (<50 / 50-150 / >=150)
+  Expected on Wi-Fi: under 50 ms
   Running as expected
 
 
@@ -158,12 +159,12 @@ ping like that feels like, and the year that technology debuted
 ("-present" if it is still in everyday use), for example:
 
   Ping to example.org: 172 ms
-  Preset: Wi-Fi (<50 / 50-150 / >=150)
+  Expected on Wi-Fi: under 50 ms
   Much slower than expected
   Like 56K dial-up from 1997
 
   Ping to example.org: 22 ms
-  Preset: 4G (<80 / 80-200 / >=200)
+  Expected on 4G: 25 to 80 ms
   Faster than expected
   Like Wi-Fi 6 from 2019-present
 
@@ -208,7 +209,7 @@ is based on. Here one 300 ms reading (a red icon) sits in a run of
 readings around 30 ms:
 
   Ping to example.org: 300 ms (usually 30 ms)
-  Preset: Wi-Fi (<50 / 50-150 / >=150)
+  Expected on Wi-Fi: under 50 ms
   Running as expected
 
 Readings older than two minutes are not used, and the count starts again
@@ -312,6 +313,17 @@ given, the command line always wins: the saved file is ignored and flags
 are never saved. Launching a target that is already being watched shows a
 notice instead of starting a duplicate. For version and contact details,
 right-click the tray icon and choose About PingTray...
+
+
+WHAT'S NEW IN v1.8
+
+  * The tooltip says what is normal, in words: the second line now reads
+    "Expected on Wi-Fi: under 50 ms" (or "Expected on 4G: 25 to 80 ms" for
+    a preset with a floor) instead of
+    "Preset: Wi-Fi (<50 / 50-150 / >=150)". It is the same range that
+    "Running as expected" uses, so the two agree, and the shorter
+    line leaves room for the reckoner line in more tooltips.
+  * Your saved settings carry over unchanged.
 
 
 WHAT'S NEW IN v1.7

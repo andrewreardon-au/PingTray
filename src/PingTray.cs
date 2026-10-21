@@ -64,8 +64,8 @@ internal static class PingTray
     private const ushort VK_RETURN = 0x0D;
     private const uint FILE_TYPE_CHAR = 2;
 
-    internal const string Version = "1.7";
-    private const string VersionDate = "2026-10-20";
+    internal const string Version = "1.8";
+    private const string VersionDate = "2026-10-21";
     private const string Author = "Andrew Reardon";
     private const string ProjectUrl = "https://github.com/andrewreardon-au/PingTray";
 
@@ -1071,15 +1071,17 @@ internal static class PingTray
         return ms < OrangeMs ? Tone.Good : (ms < RedMs ? Tone.Warn : Tone.Bad);
     }
 
-    // "Preset: Wi-Fi (<50 / 50-150 / ≥150)": the connection type the limits match ("Custom" if none)
-    // and the limits in force. The spaces inside the brackets are no-break spaces, so if the shell
-    // has to wrap the line it breaks before the brackets instead of through the numbers.
+    // "Expected on Wi-Fi: under 50 ms", "Expected on 4G: 25 to 80 ms", "Expected (custom): under 70 ms":
+    // the connection type the limits match and the readings it counts as "Running as expected" - from the
+    // type's floor (PresetFast, if it has one) up to the orange limit. The spaces in the range are no-break
+    // spaces, so if the shell has to wrap the line it breaks before the numbers, not through them.
     private static string RangeLegend()
     {
         int p = PresetIndex(OrangeMs, RedMs);
-        string name = p < PresetShort.Length ? PresetShort[p] : "Custom";
-        string nb = ((char)0xA0).ToString();
-        return string.Format("Preset: {0} (<{1}{3}/{3}{1}-{2}{3}/{3}≥{2})", name, OrangeMs, RedMs, nb);
+        string head = p < PresetShort.Length ? "Expected on " + PresetShort[p] + ": " : "Expected (custom): ";
+        int floor = p < PresetFast.Length ? PresetFast[p] : 0;
+        string range = (floor > 0 ? floor + " to " + OrangeMs : "under " + OrangeMs) + " ms";
+        return head + range.Replace(' ', (char)0xA0);
     }
 
     // True for a reply that is quicker than the preset's kind of connection ever manages (see
@@ -1091,7 +1093,7 @@ internal static class PingTray
         return p < PresetFast.Length && ms < PresetFast[p];
     }
 
-    // Tooltip for a good reply: the reading, the colour limits in force (the legend line, which names the
+    // Tooltip for a good reply: the reading, the expected range in force (the legend line, which names the
     // preset - so the verdict does not need to), and a plain verdict against the preset - "Running as
     // expected" while green, "Faster than expected" when the reply is quicker than that kind of connection
     // manages, "Slower than expected" or "Much slower than expected" when orange or red. Whenever the
@@ -1167,7 +1169,7 @@ internal static class PingTray
     // LTE at 25-35 (25), a geostationary satellite cannot beat about 480 ms (450), dial-up modems
     // typically 100-220 ms and about 90 at best (90).
     private static readonly int[] PresetFast = { 0, 0, 0, 10, 25, 450, 90 };
-    // The same seven types in a few characters, for the tooltip's "Preset: ..." line.
+    // The same seven types in a few characters, for the tooltip's "Expected on ...:" line.
     private static readonly string[] PresetShort = { "LAN", "Wired", "Wi-Fi", "5G", "4G", "Satellite", "Dial-up" };
 
     // Index into PresetNames for these limits, or PresetNames.Length ("Custom") if none matches.
