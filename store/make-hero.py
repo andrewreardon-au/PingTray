@@ -2,23 +2,23 @@
 """Microsoft Store 16:9 super hero art for PingTray (1920x1080): the tray icon on a magnified taskbar with its
 hover tooltip, one image per colour (green, orange, red). Needs Pillow and Segoe UI (Windows). Writes
 store/listing/hero-*.png. The tooltip lines must match what the app prints (LEGEND and READ below).
-Digits follow the app's RenderIcon/DrawFit: Segoe UI Bold, each glyph placed by its ink (gap 9/100 em),
-scaled to fill the box, never squeezed narrower than 0.85 of natural shape, thin dark halo."""
+Digits follow the app's RenderIcon/DrawFit (1.9): Segoe UI Semibold, each glyph placed by its ink (gap 9/100 em),
+scaled to fill the box, never squeezed narrower than 0.85 of natural shape, thin dark halo; two digits take the
+scale of "88" so every pair is the same height and weight (and are squeezed by their own width if wider, e.g. a 4)."""
 import os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "listing")
 W, H = 1920, 1080
-BOLD = r"C:\Windows\Fonts\segoeuib.ttf"
+BOLD = r"C:\Windows\Fonts\seguisb.ttf"   # Semibold, as the app since 1.9 (the name is historic)
 REG = r"C:\Windows\Fonts\segoeui.ttf"
 GREEN, ORANGE, RED = (50, 205, 50), (255, 165, 0), (255, 85, 85)
 TIP_BG, TIP_BORDER, TIP_TEXT = (43, 43, 43), (70, 70, 70), (240, 240, 240)
 TASKBAR = (32, 32, 32)
 
 
-def digits_mask(text, box_w, box_h):
-    """Grey mask of the number fitted into box_w x box_h like DrawFit."""
+def _strip(text):
     f = ImageFont.truetype(BOLD, 400)
     glyphs = []
     for ch in text:
@@ -33,8 +33,17 @@ def digits_mask(text, box_w, box_h):
     for g in glyphs:
         strip.paste(g, (x, gh - g.height))  # shared baseline
         x += g.width + gap
+    return strip
+
+
+def digits_mask(text, box_w, box_h):
+    """Grey mask of the number fitted into box_w x box_h like DrawFit."""
+    strip = _strip(text)
     fitW, fitH = box_w / strip.width, box_h / strip.height
     sy = min(fitH, fitW / 0.85)
+    if len(text) == 2:   # same scale as "88", whatever the digits
+        r = _strip("88")
+        sy = min(box_h / r.height, (box_w / r.width) / 0.85)
     sx = min(sy, fitW)
     return strip.resize((max(1, round(strip.width * sx)), max(1, round(strip.height * sy))), Image.LANCZOS)
 
