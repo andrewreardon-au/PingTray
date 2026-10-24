@@ -64,8 +64,8 @@ internal static class PingTray
     private const ushort VK_RETURN = 0x0D;
     private const uint FILE_TYPE_CHAR = 2;
 
-    internal const string Version = "1.8";
-    private const string VersionDate = "2026-10-21";
+    internal const string Version = "1.9";
+    private const string VersionDate = "2026-10-25";
     private const string Author = "Andrew Reardon";
     private const string ProjectUrl = "https://github.com/andrewreardon-au/PingTray";
 
@@ -121,6 +121,7 @@ internal static class PingTray
     private const int PingTimeoutMs = 2000;
     private static int _consecutiveFailures = 0;
     private static long _lastGoodMs = -1;
+    private static Icon _placeholderIcon;   // the app's own icon: shown before the first reading and after a retarget
 
     // The last few good readings of the host and method being watched, oldest first, each with the time
     // it was taken. The tooltip's wording is judged on their median, not on the latest reading alone, so
@@ -274,7 +275,8 @@ internal static class PingTray
         // Placeholder until the first (async) ping paints a number —
         // without this the tray slot is invisible for the first attempt
         // (up to 2s if the target is slow/down).
-        _notifyIcon.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        _placeholderIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        _notifyIcon.Icon = _placeholderIcon;
         _notifyIcon.Text = "Ping: ...";
         _notifyIcon.ContextMenuStrip = menu;
         _notifyIcon.Visible = true;
@@ -733,6 +735,9 @@ internal static class PingTray
             form.Controls.Add(okButton);
             form.AcceptButton = okButton;
             form.CancelButton = okButton;
+            // Nothing else asks Windows to activate the dialog after a tray click, and it often declines
+            // on its own (the click came from the overflow flyout, say): ask once it is on screen.
+            form.Shown += (s, e) => form.Activate();
             form.ShowDialog();
         }
     }
@@ -984,6 +989,7 @@ internal static class PingTray
             };
             foreach (TextBox box in new[] { targetBox, portBox, intervalBox, orangeBox, redBox }) box.TextChanged += edited;
 
+            form.Shown += (s, e) => form.Activate();   // see ShowAboutDialog: a tray click does not give it focus by itself
             if (form.ShowDialog() != DialogResult.OK)
             {
                 return;
@@ -1015,6 +1021,10 @@ internal static class PingTray
                 _lastGoodMs = -1;
                 _otherWorking = -1;
                 _recent.Clear();
+                // The icon still shows a reading of the OLD host, and below the miss threshold nothing
+                // repaints it: back to the placeholder, as before the very first reading.
+                if (_placeholderIcon != null) _notifyIcon.Icon = _placeholderIcon;
+                SetTooltip("Ping: ...");
             }
 
             Target = newTarget;
@@ -1494,6 +1504,17 @@ internal static class PingTray
             _otherWorking = working;
         }
 
+        // A reply (or a miss) for what was being watched before Settings changed it says nothing about
+        // the connection now: it must not repaint the icon with the old host's number, feed it to the
+        // grey "last" reading of the new host, or count as the new host's first miss. The dialog's own
+        // refresh was skipped while this probe was in flight, so the new host is probed now.
+        // (A ping has no port, so for a ping the TCP port number does not count.)
+        if (target != Target || method != ProbeMethod || (method != Method.Icmp && port != PortFor(method)))
+        {
+            UpdatePing();
+            return;
+        }
+
         if (reading.Ok)
         {
             ShowReading(method, target, port, reading.Ms);
@@ -1508,16 +1529,29 @@ internal static class PingTray
             _recent.Clear();
             SetTooltip(string.Format("{0}: offline ({1}) [{2}x]", WhatLabel(method, target, port), reading.Reason, _consecutiveFailures) +
                 (_otherWorking >= 0 ? OtherMethodHint(method, (Method)_otherWorking) : ""));
-            ApplyIcon("0", Tone.Offline);
+            ApplyIcon(OfflineText, Tone.Offline);
         }
         else
         {
-            // Below threshold: treat as a transient blip. Leave the icon
-            // showing the last known-good reading; only the tooltip
-            // reflects that attempts are currently failing.
+            // Below threshold: treat as a transient blip. The icon keeps the last known-good
+            // number but greyed (the offline grey, so grey digits = stale, grey × = offline); the
+            // tooltip says that attempts are failing. With no reading yet the placeholder stays.
+            if (_lastGoodMs >= 0) ApplyIcon(IconText(_lastGoodMs), Tone.Offline);
             string lastGoodSuffix = _lastGoodMs >= 0 ? " (last: " + _lastGoodMs + "ms)" : "";
             SetTooltip(string.Format("{0}: no response {1}/{2}{3}", WhatLabel(method, target, port), _consecutiveFailures, FailureThreshold, lastGoodSuffix));
         }
+    }
+
+    // The offline icon says a multiplication sign (U+00D7), not a number: a greyed "0" (a reply under
+    // a millisecond that was then missed) must not look like it.
+    private const string OfflineText = "\u00D7";
+
+    // What the icon says for a reading: the milliseconds, "<1" for a reply under a millisecond
+    // (Windows reports 0) and "1s+" from a second up.
+    private static string IconText(long ms)
+    {
+        if (ms >= 1000) return "1s+";
+        return ms <= 0 ? "<1" : ms.ToString();
     }
 
     // A good reading: it ends any run of misses, and the icon shows it as it is while the tooltip's
@@ -1528,11 +1562,12 @@ internal static class PingTray
         _otherWorking = -1;
         _lastGoodMs = ms;
 
-        string text = ms >= 1000 ? "999+" : ms.ToString();
+        string text = IconText(ms);
 
-        // A reading for the host and method now being watched joins the recent ones; one that was
-        // still on its way when Settings changed them is shown as it is and not remembered. (A ping has
-        // no port, so only TCP and DNS readings care that theirs is still the port in use.)
+        // A reading for the host and method now being watched joins the recent ones. (UpdatePing drops a
+        // probe that was still on its way when Settings changed them before it gets here; this check
+        // stays for callers that feed readings directly. A ping has no port, so only TCP and DNS
+        // readings care that theirs is still the port in use.)
         bool current = target == Target && method == ProbeMethod && (method == Method.Icmp || port == PortFor(method));
         long judged = current ? Judge(ms, DateTime.UtcNow) : ms;
 
@@ -1599,7 +1634,7 @@ internal static class PingTray
         const int S = 32;
         Color color = ToneColor(tone, light);
         // The outline is the opposite of the text: dark on a dark taskbar, light on a light one.
-        // The grey offline "0" gets none: it should look dull and inactive, not outlined.
+        // The grey offline × gets none: it should look dull and inactive, not outlined.
         Color halo = tone == Tone.Offline ? Color.Transparent
             : (light ? Color.FromArgb(190, 255, 255, 255) : Color.FromArgb(190, 15, 15, 15));
         using (var bmp = new Bitmap(S, S))
@@ -1626,14 +1661,18 @@ internal static class PingTray
     private static System.Drawing.Drawing2D.GraphicsPath TightText(string text)
     {
         var path = new System.Drawing.Drawing2D.GraphicsPath();
-        using (var family = new FontFamily("Segoe UI"))
+        FontStyle style = FontStyle.Regular;
+        FontFamily family;
+        try { family = new FontFamily("Segoe UI Semibold"); }
+        catch (ArgumentException) { family = new FontFamily("Segoe UI"); style = FontStyle.Bold; }
+        using (family)
         {
             float x = 0;
             foreach (char ch in text)
             {
                 using (var glyph = new System.Drawing.Drawing2D.GraphicsPath())
                 {
-                    glyph.AddString(ch.ToString(), family, (int)FontStyle.Bold, 100f, new PointF(0, 0), StringFormat.GenericTypographic);
+                    glyph.AddString(ch.ToString(), family, (int)style, 100f, new PointF(0, 0), StringFormat.GenericTypographic);
                     RectangleF cb = glyph.GetBounds();
                     if (cb.Width <= 0) continue;
                     using (var m = new System.Drawing.Drawing2D.Matrix())
@@ -1657,16 +1696,23 @@ internal static class PingTray
         {
             RectangleF b = path.GetBounds();
             if (b.Width <= 0 || b.Height <= 0) return;
+            // Two digits (and "<1") all share the scale of "88", so 11 and 88 have the same height and stroke
+            // weight (fitted on their own, narrow numbers came out bigger and bolder). A wide pair
+            // (a 4 is wider than an 8) is squeezed by its own width rather than clipped. Anything
+            // else is fitted on its own bounds.
+            RectangleF r = b;
+            if (text.Length == 2 && (char.IsDigit(text[0]) || text[0] == '<') && char.IsDigit(text[1]))
+                using (var rp = TightText("88")) r = rp.GetBounds();
             // Fill the box height; if the text is too wide, squeeze it horizontally (never
             // below MinSqueeze) and only then shrink it.
-            float fitW = box.Width / b.Width, fitH = box.Height / b.Height;
+            float fitW = box.Width / r.Width, fitH = box.Height / r.Height;
             float sy = Math.Min(fitH, fitW / MinSqueeze);
-            float sx = Math.Min(sy, fitW);
+            float sx = Math.Min(Math.Min(sy, fitW), box.Width / b.Width);
             using (var m = new System.Drawing.Drawing2D.Matrix())
             {
                 m.Translate(box.X + box.Width / 2f, box.Y + box.Height / 2f);
                 m.Scale(sx, sy);
-                m.Translate(-(b.X + b.Width / 2f), -(b.Y + b.Height / 2f));
+                m.Translate(-(b.X + b.Width / 2f), -(r.Y + r.Height / 2f));
                 path.Transform(m);
             }
             if (halo.A > 0)

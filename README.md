@@ -1,6 +1,6 @@
 # PingTray
 
-**v1.8** (2026-10-21) by Andrew Reardon, andrewreardon@gmail.com
+**v1.9** (2026-10-25) by Andrew Reardon, andrewreardon@gmail.com
 
 Shows your network latency as a number in the system tray.
 
@@ -51,17 +51,17 @@ PingTray is also on the [Microsoft Store](https://apps.microsoft.com/detail/9MV3
 | 🟢 Green | Good: under 50 ms |
 | 🟠 Orange | OK: 50 to 150 ms |
 | 🔴 Red | Slow: 150 ms or higher |
-| ⚪ Grey "0" | Offline: no response |
+| ⚪ Grey × | Offline: no response |
 
 It checks every 5 seconds by default. Hover over the icon to see the exact number, which connection-type [preset](#tuning-the-colours) your limits match and what it counts as normal, and whether the reply is as expected for that preset. When it is not, the [ready reckoner](#the-ready-reckoner) adds what it feels like.
 
-The number is drawn big and bold with a thin outline, so it reads on any taskbar colour. On a light Windows taskbar the colours switch to darker shades. The offline "0" is a plain dark grey, so it looks dull and inactive but still shows on both dark and light taskbars.
+The number is drawn big with a thin outline, so it reads on any taskbar colour. On a light Windows taskbar the colours switch to darker shades. A reply under 1 ms shows as `<1`, and 1000 ms or more as `1s+`. The offline × is a plain dark grey, so it looks dull and inactive but still shows on both dark and light taskbars.
 
-A single missed reply doesn't flip it to offline, which is normal on flaky connections like 4G. It takes **3 misses in a row** before it shows the grey "0". Until then it keeps showing your last good reading, and hovering shows something like `no response 1/3 (last: 23ms)`, so you can see it is struggling without the number jumping around.
+A single missed reply doesn't flip it to offline, which is normal on flaky connections like 4G. Until the **3rd miss in a row** the icon keeps your last good reading but in grey, and hovering shows something like `no response 1/3 (last: 23ms)`. Grey digits mean the number is stale, a grey × means offline, and the next reply brings the colour straight back.
 
 ## Changing what it watches
 
-Click the tray icon (or right-click > **Settings...**) to open the Settings box. You can change the target host, how it checks (ping, TCP connect or a DNS query), how often it checks, and what counts as green, orange and red. Click **OK** and it applies at once, with no restart. Your choice is remembered for next time (when you start it normally, without command-line options).
+Click the tray icon (or right-click > **Settings...**) to open the Settings box. You can change the target host, how it checks (ping, TCP connect or a DNS query), how often it checks, and what counts as green, orange and red. Click **OK** and it applies at once, with no restart; until the first reply from a new target the icon shows the PingTray logo, not the old target's number. Your choice is remembered for next time (when you start it normally, without command-line options).
 
 ![The Settings box](screenshots/PingTray-screenshot_settings.png)
 
@@ -124,7 +124,7 @@ Like Wi-Fi 6 from 2019-present
 | 580 to 1094 ms | a 2400-baud modem from 1984 |
 | 1095 ms and over | ARPANET from 1969 |
 
-It only appears when the reply is not as expected, because that is when a comparison helps. Slower: a wired connection that slips to 22 ms reads "Like Wi-Fi 6 from 2019-present", and Wi-Fi that slips to 60 ms reads "Like 4G from 2009-present". Faster: a 22 ms reply on the 4G preset also reads "Like Wi-Fi 6 from 2019-present". A reply that is as expected just says so. It is order-of-magnitude fun, not a measurement: real lines vary a lot.
+For example, a wired connection that slips to 22 ms reads "Like Wi-Fi 6 from 2019-present", and Wi-Fi that slips to 60 ms reads "Like 4G from 2009-present". A reply that is as expected just says so. It is order-of-magnitude fun, not a measurement: real lines vary a lot.
 
 Windows shows at most 127 characters in a tray tooltip. If the full wording would not fit (a very long host name, say, together with the "usually" note below), this line is dropped first, and the note last.
 
@@ -205,6 +205,14 @@ A `--target` that is not a host name or an IP address (for example `-t 1.1.1`) i
 
 ![The About box](screenshots/PingTray-screenshot_about.png)
 
+## What's new in v1.9
+
+- **Numbers that look like one font:** every two-digit reading is now drawn at the same height and weight (11 used to look bolder than 28), in Segoe UI Semibold. A reply under 1 ms reads `<1` (it was 0) and 1 second or more reads `1s+` (it was 999+).
+- **A missed reply greys the number:** until the third miss the icon keeps your last reading in grey instead of its colour. The offline icon is now a grey × (it was a "0"), so the two can't be mixed up.
+- **Settings and About take focus:** opening either from the tray brings it to the front, so you can type straight away.
+- **Changing the target starts clean:** the icon goes back to the logo until the first reply from the new target. Before, the old target's number could linger, or its late reply could turn up under the new target.
+- Your saved settings carry over unchanged.
+
 ## What's new in v1.8
 
 - **The tooltip says what is normal, in words:** the second line now reads `Expected on Wi-Fi: under 50 ms` (or `Expected on 4G: 25 to 80 ms` for a preset with a floor) instead of `Preset: Wi-Fi (<50 / 50-150 / ≥150)`. It is the same range that "Running as expected" uses, so the two agree, and the shorter line leaves room for the reckoner line in more tooltips.
@@ -258,7 +266,7 @@ csc.exe /nologo /target:winexe /platform:x64 /out:dist\PingTray.exe /win32icon:s
 SHA-256 of the committed `dist/PingTray.exe`:
 
 ```
-01AB5BF2D2905C9048DD5C5E9ACB3A443B9E3DCABCEE618A51A6C9209F9EDE95
+2D78F9633C0B454E1F0DC198A6C8C39017A07A882046A16981D97E563292779D
 ```
 
 The exe is **not code-signed**, so SmartScreen may warn about it after downloading (right-click > Properties > **Unblock**, or build it yourself, see below).
