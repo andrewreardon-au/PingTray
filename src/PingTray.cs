@@ -64,8 +64,8 @@ internal static class PingTray
     private const ushort VK_RETURN = 0x0D;
     private const uint FILE_TYPE_CHAR = 2;
 
-    internal const string Version = "1.9";
-    private const string VersionDate = "2026-10-25";
+    internal const string Version = "2.0";
+    private const string VersionDate = "2026-10-31";
     private const string Author = "Andrew Reardon";
     private const string ProjectUrl = "https://github.com/andrewreardon-au/PingTray";
 
@@ -250,7 +250,7 @@ internal static class PingTray
         if (!createdNew)
         {
             MessageBox.Show(
-                "PingTray is already running for " + watching + " — look for its icon in the tray (or under the ^ overflow arrow near the clock).\n\n" +
+                "PingTray is already running for " + watching + ". Look for its icon in the tray (or under the ^ overflow arrow near the clock).\n\n" +
                 "To watch a second host at the same time, launch with a different target, e.g.:\n" +
                 "PingTray.exe -t 1.0.0.1",
                 // MessageBoxIcon.None: an icon would play the system
@@ -579,7 +579,7 @@ internal static class PingTray
 
     private static string UsageText()
     {
-        return "PingTray " + Version + " - live ping latency in the system tray\r\n" +
+        return "PingTray " + Version + ": live ping latency in the system tray\r\n" +
                "\r\n" +
                "Usage: PingTray.exe [options]\r\n" +
                "\r\n" +
@@ -738,6 +738,7 @@ internal static class PingTray
             // Nothing else asks Windows to activate the dialog after a tray click, and it often declines
             // on its own (the click came from the overflow flyout, say): ask once it is on screen.
             form.Shown += (s, e) => form.Activate();
+            form.ActiveControl = okButton;   // not the link: Enter on a focused link opens the browser instead of closing the box
             form.ShowDialog();
         }
     }
@@ -840,29 +841,37 @@ internal static class PingTray
         using (var form = new Form())
         {
             form.Name = "settings";
-            form.Text = "Ping Tray Settings";
+            form.Text = "PingTray Settings";
             form.FormBorderStyle = FormBorderStyle.FixedDialog;
             form.StartPosition = FormStartPosition.CenterScreen;
             form.MinimizeBox = false;
             form.MaximizeBox = false;
-            form.ClientSize = new Size(305, 400);
-            // Every input is 160 px wide: the widest drop-down item ("Wi-Fi / broadband (default)") needs about 157 px to show in full, so this is as
-            // narrow as they can all go together. The form keeps 15 px either side of the labels and boxes, and the hint (four lines at this width) fits.
+            form.Font = SystemFonts.MessageBoxFont;    // Segoe UI, matches the rest of Windows (and HeatTray)
+            form.ClientSize = new Size(360, 452);
+            // Two group boxes, as in HeatTray. Inside a GroupBox the coordinates are relative to the box. Every input
+            // ends at x=315 of its group; the drop-downs and the host are 180 px wide (the widest drop-down item,
+            // "Wi-Fi / broadband (default)", needs about 175 px to show in full), the numbers are 70 px and right-aligned.
 
-            var targetLabel = new Label { Text = "Target host:", Left = 15, Top = 20, Width = 110 };
-            var targetBox = new TextBox { Name = "targetBox", Text = Target, Left = 130, Top = 17, Width = 160 };
+            var connGroup = new GroupBox { Text = "Connection", Left = 15, Top = 10, Width = 330, Height = 156 };
+            var limitsGroup = new GroupBox { Text = "Colour limits", Left = 15, Top = 174, Width = 330, Height = 124 };
 
-            var methodLabel = new Label { Text = "Method:", Left = 15, Top = 55, Width = 110 };
-            var methodBox = new ComboBox { Left = 130, Top = 52, Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
+            connGroup.Controls.Add(new Label { Text = "Target host:", Left = 10, Top = 28, Width = 120 });
+            var targetBox = new TextBox { Name = "targetBox", Text = Target, Left = 135, Top = 25, Width = 180 };
+            connGroup.Controls.Add(targetBox);
+
+            connGroup.Controls.Add(new Label { Text = "Method:", Left = 10, Top = 60, Width = 120 });
+            var methodBox = new ComboBox { Left = 135, Top = 57, Width = 180, DropDownStyle = ComboBoxStyle.DropDownList };
             methodBox.Items.AddRange(MethodNames);
             methodBox.SelectedIndex = (int)ProbeMethod;
+            connGroup.Controls.Add(methodBox);
 
             // The port belongs to TCP connect (443 unless changed) and to the DNS query (53), each
             // remembered on its own: the box shows the one for the chosen method and is greyed out for ping.
             string[] portText = { "", TcpPort.ToString(), UdpPort.ToString() };
             int portShown = (int)ProbeMethod;
-            var portLabel = new Label { Text = "Port:", Left = 15, Top = 90, Width = 110 };
-            var portBox = new TextBox { Name = "portBox", Text = portShown > 0 ? portText[portShown] : portText[1], Left = 130, Top = 87, Width = 160, Enabled = portShown > 0 };
+            connGroup.Controls.Add(new Label { Text = "Port:", Left = 10, Top = 92, Width = 120 });
+            var portBox = new TextBox { Name = "portBox", Text = portShown > 0 ? portText[portShown] : portText[1], Left = 245, Top = 89, Width = 70, Enabled = portShown > 0, TextAlign = HorizontalAlignment.Right };
+            connGroup.Controls.Add(portBox);
             methodBox.SelectedIndexChanged += (s, e) =>
             {
                 if (portShown > 0) portText[portShown] = portBox.Text;   // keep what was typed for the method being left
@@ -871,19 +880,23 @@ internal static class PingTray
                 if (portShown > 0) portBox.Text = portText[portShown];
             };
 
-            var intervalLabel = new Label { Text = "Interval (sec):", Left = 15, Top = 125, Width = 110 };
-            var intervalBox = new TextBox { Name = "intervalBox", Text = (IntervalMs / 1000).ToString(), Left = 130, Top = 122, Width = 160 };
+            connGroup.Controls.Add(new Label { Text = "Interval (sec):", Left = 10, Top = 124, Width = 120 });
+            var intervalBox = new TextBox { Name = "intervalBox", Text = (IntervalMs / 1000).ToString(), Left = 245, Top = 121, Width = 70, TextAlign = HorizontalAlignment.Right };
+            connGroup.Controls.Add(intervalBox);
 
-            var typeLabel = new Label { Text = "Connection type:", Left = 15, Top = 160, Width = 110 };
-            var typeBox = new ComboBox { Left = 130, Top = 157, Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
+            limitsGroup.Controls.Add(new Label { Text = "Connection type:", Left = 10, Top = 28, Width = 120 });
+            var typeBox = new ComboBox { Left = 135, Top = 25, Width = 180, DropDownStyle = ComboBoxStyle.DropDownList };
             typeBox.Items.AddRange(PresetNames);
             typeBox.Items.Add("Custom");
             typeBox.SelectedIndex = PresetIndex(OrangeMs, RedMs);
+            limitsGroup.Controls.Add(typeBox);
 
-            var orangeLabel = new Label { Text = "Orange from (ms):", Left = 15, Top = 195, Width = 110 };
-            var orangeBox = new TextBox { Name = "orangeBox", Text = OrangeMs.ToString(), Left = 130, Top = 192, Width = 160 };
-            var redLabel = new Label { Text = "Red from (ms):", Left = 15, Top = 230, Width = 110 };
-            var redBox = new TextBox { Name = "redBox", Text = RedMs.ToString(), Left = 130, Top = 227, Width = 160 };
+            limitsGroup.Controls.Add(new Label { Text = "Orange from (ms):", Left = 10, Top = 60, Width = 120 });
+            var orangeBox = new TextBox { Name = "orangeBox", Text = OrangeMs.ToString(), Left = 245, Top = 57, Width = 70, TextAlign = HorizontalAlignment.Right };
+            limitsGroup.Controls.Add(orangeBox);
+            limitsGroup.Controls.Add(new Label { Text = "Red from (ms):", Left = 10, Top = 92, Width = 120 });
+            var redBox = new TextBox { Name = "redBox", Text = RedMs.ToString(), Left = 245, Top = 89, Width = 70, TextAlign = HorizontalAlignment.Right };
+            limitsGroup.Controls.Add(redBox);
 
             // Start at login. The unzipped build owns this (a Run-key entry, applied with OK); in the Store
             // build Windows owns it, so there is a link to the page where it is switched instead.
@@ -892,7 +905,7 @@ internal static class PingTray
             CheckBox startupBox = null;
             if (packaged)
             {
-                var startupLink = new LinkLabel { Text = "Start with Windows: change in Windows Settings", Left = 15, Top = 264, Width = 275, Height = 18 };
+                var startupLink = new LinkLabel { Text = "Start with Windows: change in Windows Settings", Left = 15, Top = 309, Width = 330, Height = 20 };
                 startupLink.LinkClicked += (s, e) =>
                 {
                     try { Process.Start("ms-settings:startupapps"); }
@@ -902,7 +915,7 @@ internal static class PingTray
             }
             else
             {
-                startupBox = new CheckBox { Text = "Start with Windows", Left = 15, Top = 262, Width = 275, Checked = GetRunAtLogin() };
+                startupBox = new CheckBox { Text = "Start with Windows", Left = 15, Top = 307, Width = 330, Height = 22, Checked = GetRunAtLogin() };
                 startupControl = startupBox;
             }
 
@@ -912,11 +925,11 @@ internal static class PingTray
                 Name = "hint",
                 Text = "Pick a connection type for suggested limits, or type your own. Replies faster than the orange limit are green. " +
                        "If ping is blocked on your network, try TCP connect or a DNS query.",
-                Left = 15, Top = 292, Width = 275, Height = 56, ForeColor = SystemColors.GrayText
+                Left = 15, Top = 338, Width = 330, Height = 70, ForeColor = SystemColors.GrayText
             };
 
-            var okButton = new Button { Text = "OK", Left = 115, Top = 360, Width = 80, DialogResult = DialogResult.OK };
-            var cancelButton = new Button { Text = "Cancel", Left = 210, Top = 360, Width = 80, DialogResult = DialogResult.Cancel };
+            var okButton = new Button { Text = "OK", Left = 177, Top = 416, Width = 80, DialogResult = DialogResult.OK };
+            var cancelButton = new Button { Text = "Cancel", Left = 265, Top = 416, Width = 80, DialogResult = DialogResult.Cancel };
 
             // The suggestions and the two boxes follow each other: choosing a connection type fills in
             // its limits, and typing limits that match a type (or no type) updates the drop-down.
@@ -941,20 +954,8 @@ internal static class PingTray
             orangeBox.TextChanged += limitsTyped;
             redBox.TextChanged += limitsTyped;
 
-            form.Controls.Add(targetLabel);
-            form.Controls.Add(targetBox);
-            form.Controls.Add(methodLabel);
-            form.Controls.Add(methodBox);
-            form.Controls.Add(portLabel);
-            form.Controls.Add(portBox);
-            form.Controls.Add(intervalLabel);
-            form.Controls.Add(intervalBox);
-            form.Controls.Add(typeLabel);
-            form.Controls.Add(typeBox);
-            form.Controls.Add(orangeLabel);
-            form.Controls.Add(orangeBox);
-            form.Controls.Add(redLabel);
-            form.Controls.Add(redBox);
+            form.Controls.Add(connGroup);
+            form.Controls.Add(limitsGroup);
             form.Controls.Add(startupControl);
             form.Controls.Add(hint);
             form.Controls.Add(okButton);
@@ -1036,7 +1037,9 @@ internal static class PingTray
             RedMs = newRed;
             _timer.Interval = IntervalMs;
             if (startupBox != null) SetRunAtLogin(startupBox.Checked);
-            SaveSettings();
+            // Started with options: the command line described this run and settings.ini was not
+            // read, so writing it now would replace the saved settings with this run's.
+            if (!_targetFromCli && !_intervalFromCli && !_coloursFromCli && !_methodFromCli) SaveSettings();
             UpdatePing();
         }
     }

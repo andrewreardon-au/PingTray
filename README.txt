@@ -1,69 +1,15 @@
 PINGTRAY
 
-v1.9 (2026-10-25)
-Author: Andrew Reardon, andrewreardon@gmail.com
+v2.0 (2026-10-31)
+Author: Andrew Reardon
 
-Shows your network latency as a number in the system tray, right next to
-the clock.
-
-
-GETTING STARTED
-
-  1. Double-click PingTray.exe (in the dist folder).
-  2. Don't see it? Click the small ^ arrow near the clock to show hidden
-     tray icons.
-  3. To close it, right-click the icon and choose Exit.
-
-
-KEEPING THE ICON VISIBLE
-
-By default, Windows may tuck new tray icons away under the ^ hidden-icons
-arrow instead of showing them next to the clock. To pin it visibly:
-
-  1. Right-click the taskbar, then choose Taskbar settings.
-  2. Click Other system tray icons.
-  3. Find PingTray in the list and switch it On.
-
-
-STARTING AUTOMATICALLY AT LOGIN
-
-In the Settings box, tick Start with Windows to start PingTray when you
-sign in. Untick it to stop.
-
-The older method still works if you want a shortcut that uses --target=
-options. Put the shortcut in your Startup folder:
-
-  1. Right-click PingTray.exe (in the dist folder) and choose Create
-     shortcut.
-  2. Press Win + R, type shell:startup, and press Enter. This opens your
-     Startup folder.
-  3. Drag the shortcut you created into that folder.
-
-To turn that off again, delete the shortcut from the Startup folder.
-
-
-MOVING IT TO ANOTHER COMPUTER
-
-Copy the whole PingTray folder anywhere (a USB drive, a cloud folder) and
-run dist\PingTray.exe on the other machine. There is nothing else to
-install. Tick Start with Windows there again if you want it to start at
-login on that machine too.
-
-
-MICROSOFT STORE VERSION
-
-PingTray is also on the Microsoft Store:
-https://apps.microsoft.com/detail/9MV371JKHPVD
-It is the same app. It installs and updates through the Store, and its
-settings are private to the app and removed if you uninstall it. Start at
-login is switched on in Windows Settings > Apps > Startup.
-PingTray.exe --target=... works from the command line and from shortcuts.
+Shows your network latency as a number in the system tray.
 
 
 WHAT THE NUMBER MEANS
 
   Green         Good: under 50 ms
-  Orange        OK: 50 to 150 ms
+  Orange        OK: 50 ms up to (not including) 150 ms
   Red           Slow: 150 ms or higher
   Grey cross    Offline: no response
 
@@ -75,9 +21,7 @@ preset. When it is not, THE READY RECKONER adds what it feels like.
 
 The number is drawn big with a thin outline, so it reads on any taskbar
 colour. On a light Windows taskbar the colours switch to darker shades. A
-reply under 1 ms shows as "<1", and 1000 ms or more as "1s+". The offline
-cross is a plain dark grey, so it looks dull and inactive but still shows
-on both dark and light taskbars.
+reply under 1 ms shows as "<1", and 1000 ms or more as "1s+".
 
 A single missed reply does not flip it to offline, which is normal on
 flaky connections like 4G. Until the 3rd miss in a row the icon keeps your
@@ -85,6 +29,47 @@ last good reading but in grey, and hovering shows something like
 "no response 1/3 (last: 23ms)". Grey digits mean the number is stale, a
 grey cross means offline, and the next reply brings the colour straight
 back.
+
+
+GETTING STARTED
+
+Microsoft Store: PingTray is on the Microsoft Store:
+https://apps.microsoft.com/detail/9MV371JKHPVD
+It installs and updates through the Store, and its settings are private to
+the app and removed if you uninstall it. Open it from the Start menu.
+
+Zip: there is no installer. Extract the zip and double-click PingTray.exe
+(in the dist folder). To move it to another computer, copy the whole
+folder.
+
+Then:
+
+  1. Don't see the icon? Click the small ^ arrow near the clock to show
+     hidden tray icons.
+  2. To close it, right-click the icon and choose Exit.
+
+
+KEEPING THE ICON VISIBLE
+
+Windows may tuck new tray icons away under the ^ arrow. To pin it next to
+the clock:
+
+  1. Right-click the taskbar, then choose Taskbar settings.
+  2. Click Other system tray icons.
+  3. Find PingTray in the list and switch it On. (On Windows 10 the page
+     is called Select which icons appear on the taskbar.)
+
+
+STARTING AUTOMATICALLY AT LOGIN
+
+In the Settings box, tick Start with Windows to start PingTray when you
+sign in. Untick it to stop. (In the Store version that line is a link to
+Windows Settings > Apps > Startup instead.)
+
+In the zip version, a shortcut works too, if you want one that uses
+--target= options: right-click PingTray.exe (in the dist folder) and choose
+Create shortcut, press Win + R, type shell:startup, and drag the shortcut
+into the folder that opens. Delete it from there to turn it off.
 
 
 CHANGING WHAT IT WATCHES
@@ -107,12 +92,9 @@ you would be watching a different address from the one you typed. The
 interval is 1 to 86400 seconds, a port 1 to 65535, and the colour limits 1
 to 2000 ms with red above orange.
 
-By default it pings 1.1.1.1 (Cloudflare's public DNS: always on, and with
-data centres in most Australian capital cities, so the reading reflects
-your own connection rather than a trip across the country). 8.8.8.8
-(Google) is a good alternative, but Google's Australian sites are only in
-Sydney and Melbourne, so from somewhere like Perth it adds a cross-country
-hop.
+By default it pings 1.1.1.1 (Cloudflare's public DNS). It is always on and
+answers from a nearby server in most parts of the world, so the reading
+reflects your own connection. 8.8.8.8 (Google) is a good alternative.
 
 
 TUNING THE COLOURS
@@ -189,16 +171,16 @@ For example, a wired connection that slips to 22 ms reads
 "Like 4G from 2009-present". A reply that is as expected just says so. It
 is order-of-magnitude fun, not a measurement: real lines vary a lot.
 
-Windows shows at most 127 characters in a tray tooltip. If the full
-wording would not fit (a very long host name, say, together with the
-"usually" note below), this line is dropped first, and the note last.
+Windows shows only a limited amount of tooltip text. If the full wording
+would not fit (a very long host name, say, together with the "usually"
+note below), the reckoner line is dropped first, and the note last.
 
 
 ONE ODD READING DOES NOT CHANGE THE WORDING
 
 Now and then a single ping is far slower (or faster) than the ones around
 it. So the wording under the number ("Running as expected", "Slower than
-expected" and the reckoner line) is based on the MEDIAN of the last five
+expected" and the reckoner line) is based on the median of the last five
 readings (the middle one when you put them in order), not on the latest
 alone. One odd reading changes nothing; it takes three of the last five to
 move the wording, about 15 seconds at the default 5-second interval.
@@ -249,7 +231,8 @@ the tooltip says so:
 
 The same goes for any pair, e.g. "TCP looks blocked, but DNS works" or
 "DNS looks blocked, but ping works". If nothing gets through, it just says
-offline.
+offline. To find out, PingTray tries the other two methods against the
+same host while the chosen one is not answering.
 
 TCP connect only does the handshake and sends nothing else, so pick a
 port the target really listens on (443 for websites, 22 for SSH, 445 for
@@ -260,8 +243,8 @@ answers DNS. Any answer counts, even an error.
 Behind a mandatory web proxy neither ping nor a direct TCP connection
 reaches the internet, so:
 
-  * Watch your internal servers (by ping or TCP connect). That is what
-    PingTray does best there: type their names or addresses as the target.
+  * Watch your internal servers (by ping or TCP connect): type their names
+    or addresses as the target.
   * Time the path to the proxy itself: set Method to TCP connect and use
     the proxy's host name as the target and its port as the port (your IT
     team can tell you, or look under Windows Settings > Network &
@@ -271,7 +254,7 @@ reaches the internet, so:
 MONITORING MORE THAN ONE SERVER
 
 You can run several PingTray icons side by side, one per server, each with
-its own target and interval:
+its own target and interval. In the zip version:
 
   1. Right-click PingTray.exe (in the dist folder) and choose Create
      shortcut.
@@ -280,25 +263,34 @@ its own target and interval:
      --target=192.168.1.1
   4. Save, and use that shortcut to launch this second icon.
 
+In the Store version, run PingTray.exe --target=192.168.1.1 from Win + R
+or a terminal.
+
 Repeat for as many servers as you want to watch, each with its own
-shortcut and --target=. You can also add --interval=10 the same way to
-make that icon check every 10 seconds instead of 5, or --method=tcp
---port=22 to watch a server by TCP connect. The same host checked by ping,
-TCP and DNS counts as three icons. A shortcut with options always does
-exactly what its options say: choices saved in the Settings box only apply
-when PingTray is started without options.
+--target=. You can also add --interval=10 the same way to make that icon
+check every 10 seconds instead of 5, or --method=tcp --port=22 to watch a
+server by TCP connect. The same host checked by ping, TCP and DNS counts
+as three icons. A shortcut with options always does exactly what its
+options say: choices saved in the Settings box only apply when PingTray is
+started without options.
 
 
 COMMAND-LINE OPTIONS
 
 For terminal users:
 
+  PingTray.exe [options]
+
   -t <host>, --target=<host>   host to check (default 1.1.1.1)
   -i <sec>,  --interval=<sec>  seconds between checks (default 5)
-  --method=<icmp|tcp|udp>      ping (default), TCP connect or DNS query
-  --port=<n>                   port for tcp (443) or udp (53)
-  --orange=<ms>                orange from this many ms (default 50)
-  --red=<ms>                   red from this many ms (default 150)
+  --method=<icmp|tcp|udp>      ping (default), a TCP connection, or a DNS
+                               query
+  --port=<n>                   port for tcp (default 443) or udp (default
+                               53)
+  --orange=<ms>                a reply this slow or slower is orange
+                               (default 50)
+  --red=<ms>                   a reply this slow or slower is red
+                               (default 150)
   -h, --help                   show this help and exit
   -v, --version                show version info and exit
 
@@ -309,11 +301,27 @@ noticed instead of quietly watching something else. Other bad values
 settings.ini.
 
 Started with no options, PingTray resumes whatever was last saved from
-the Settings box (settings.ini next to the exe). With any valid option
-given, the command line always wins: the saved file is ignored and flags
-are never saved. Launching a target that is already being watched shows a
-notice instead of starting a duplicate. For version info, right-click the
-tray icon and choose About PingTray...
+the Settings box (settings.ini next to the exe in the zip, or in the app's
+private storage in the Store version). With any valid option given, the
+command line always wins: the saved file is ignored and never overwritten
+by flags. Changes you make in Settings during such a run apply until you
+close it, and are not saved. The Start with Windows tick is the exception:
+it is a Windows setting, so it takes effect when you press OK, and it
+starts PingTray without options. Launching a target that is already being
+watched shows a notice instead of starting a duplicate. For version info,
+right-click the tray icon and choose About PingTray...
+
+
+WHAT'S NEW IN v2.0
+
+  * A tidier Settings box: the settings are grouped under Connection and
+    Colour limits, the numbers line up on the right, and the box uses the
+    standard Windows font.
+  * Options are never saved by accident: if PingTray was started with
+    options such as --target=, pressing OK in Settings no longer
+    overwrites the settings you saved earlier.
+  * Enter closes the About box (it used to open the project page).
+  * Your saved settings carry over unchanged.
 
 
 WHAT'S NEW IN v1.9
@@ -330,75 +338,17 @@ WHAT'S NEW IN v1.9
   * Changing the target starts clean: the icon goes back to the logo until
     the first reply from the new target. Before, the old target's number
     could linger, or its late reply could turn up under the new target.
-  * Your saved settings carry over unchanged.
 
 
 WHAT'S NEW IN v1.8
 
   * The tooltip says what is normal, in words: the second line now reads
     "Expected on Wi-Fi: under 50 ms" (or "Expected on 4G: 25 to 80 ms" for
-    a preset with a floor) instead of
-    "Preset: Wi-Fi (<50 / 50-150 / >=150)". It is the same range that
-    "Running as expected" uses, so the two agree, and the shorter
-    line leaves room for the reckoner line in more tooltips.
-  * Your saved settings carry over unchanged.
+    a preset with a floor). It is the same range that "Running as
+    expected" uses, so the two agree.
 
-
-WHAT'S NEW IN v1.7
-
-  * Start with Windows: a tick box in Settings starts PingTray when you
-    sign in, with no administrator rights and no shortcut to set up.
-    Untick it to stop. The Settings window is a little taller to fit it.
-  * GitHub address in the About box: a link to the project page replaces
-    the email address, and -v prints the same address.
-  * Your saved settings carry over unchanged.
-
-
-WHAT'S NEW IN v1.5
-
-  * TCP connect and a DNS query as alternatives to ping, for networks that
-    block ping: a Method setting (and --method=tcp|udp --port=<n>). If one
-    method is blocked and another works, the tooltip tells you.
-  * Tunable colour limits, with suggestions: pick your connection type
-    (LAN, wired, Wi-Fi, 5G, 4G, satellite, 90s dial-up) in Settings, or type
-    your own. The tooltip shows the preset and the limits in force ("Preset:
-    Wi-Fi (<50 / 50-150 / >=150)"). New options --orange=<ms> and
-    --red=<ms>.
-  * Plain words in the tooltip, and a ready reckoner: the tooltip now says
-    how a reply compares with your preset ("Running as expected" while
-    green; "Slower than expected" or "Much slower than expected" when
-    orange or red; "Faster than expected" when it is quicker than that kind
-    of connection manages, e.g. 22 ms on 4G). When it is not as expected,
-    it adds what that feels like ("Like 4G from 2009-present").
-  * Steadier wording: that wording and the reckoner line are based on the
-    median of the last five readings, so one odd reading no longer flips
-    them. The icon still shows each reading as it comes. When the latest
-    reading alone would read differently, the tooltip says what the wording
-    is based on ("usually 30 ms").
-  * Settings checks what you type: a bad entry keeps the box open and says
-    what to fix, instead of closing it and losing everything you typed. An
-    IP address has to be a proper four-number address (1.1.1 used to be
-    quietly read as 1.1.0.1), host names with accented letters now work,
-    and a huge interval no longer crashes the app.
-  * One Settings (or About) window at a time: clicking the tray icon (or
-    the menu item) again while it is open brings the open window to the
-    front instead of piling another copy on top.
-  * A lighter red on dark taskbars: the slow reading stands out better
-    (about 5:1 contrast against a dark taskbar, up from about 4:1).
-  * The offline "0" is now a plain dark grey, with no outline.
-  * Your saved settings carry over: a settings.ini from an earlier version
-    keeps working with the standard limits.
-
-
-WHAT'S NEW IN v1.4
-
-  * Bigger, bolder numbers: roughly 1.5 to 2 times taller in the tray than
-    before, with an outline so they stay readable on any background.
-  * Follows your Windows light/dark taskbar: the old light green and orange
-    were hard to read on a light taskbar.
-  * The offline "0" shows on a dark taskbar (it used to be black on dark).
-  * Nothing else changed: pinging, settings and the command-line options
-    work as before.
+Older changes are in the release notes for each version:
+https://github.com/andrewreardon-au/PingTray/releases
 
 
 BUILDING IT YOURSELF
@@ -406,9 +356,10 @@ BUILDING IT YOURSELF
 The source is in the src folder (one plain C# file). Open PowerShell in
 this folder and run .\build.ps1: it recompiles dist\PingTray.exe using the
 C# compiler that ships with .NET Framework on every Windows 10/11 machine.
-No SDK, no downloads, no admin rights. The exe is not code-signed, so
-SmartScreen may warn about a downloaded copy: right-click it, choose
-Properties and tick Unblock, or build it yourself.
+No SDK, no downloads, no admin rights. The exe in the zip is not
+code-signed, so SmartScreen may warn about a downloaded copy: right-click
+the zip, choose Properties and tick Unblock before extracting, or build it
+yourself.
 
 
 LICENSE

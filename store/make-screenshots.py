@@ -27,7 +27,7 @@ TASKBAR = [  # (source in store/shots, scale, caption, output)
     ("menu.png", 2.5, "Right-click for Settings, About and Exit", "screenshot-2-menu.png"),
 ]
 DIALOGS = [  # (source in ../screenshots, scale, caption, output)
-    ("PingTray-screenshot_settings.png", 1.4, "Pick a connection type, or set your own limits", "screenshot-3-settings.png"),
+    ("PingTray-screenshot_settings.png", 1.3, "Pick a connection type, or set your own limits", "screenshot-3-settings.png"),
     ("PingTray-screenshot_about.png", 2, "Version details and command-line help", "screenshot-4-about.png"),
 ]
 

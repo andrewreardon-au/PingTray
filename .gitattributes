@@ -4,3 +4,4 @@ docs/ export-ignore
 .github/ export-ignore
 build-store.ps1 export-ignore
 .gitattributes export-ignore
+.gitignore export-ignore
